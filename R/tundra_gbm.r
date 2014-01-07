@@ -63,10 +63,12 @@ tundra_gbm_predict_fn <- function(dataframe, ...) {
     output$perf[[perf_method]], type = type)
 }
 
-tundra_gbm <- function(munge_procedure = list()) {
+#' @export
+tundra_gbm <- function(munge_procedure = list(), default_args = list()) {
   tundra_container$new('gbm',
                        tundra_gbm_train_fn,
                        tundra_gbm_predict_fn,
-                       munge_procedure)
+                       munge_procedure,
+                       default_args)
 }
 
