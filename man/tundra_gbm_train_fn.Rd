@@ -2,7 +2,7 @@
 \alias{tundra_gbm_train_fn}
 \title{Tundra GBM wrapper}
 \usage{
-tundra_gbm_train_fn(dataframe, ...)
+tundra_gbm_train_fn(dataframe, train_args)
 }
 \description{
 Tundra GBM wrapper

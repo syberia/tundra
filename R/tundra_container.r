@@ -24,28 +24,29 @@ tundra_container <- setRefClass('tundraContainer',
       trained <<- FALSE
     },
 
-    train = function(dataframe, ..., verbose = FALSE) {
+    train = function(dataframe, train_args = list(), verbose = FALSE) {
       if (trained)
         stop("Tundra model '", keyword, "' has already been trained.")
-      on.exit(trained <<- TRUE)
 
       if (length(munge_procedure) > 0) {
         require(mungebits)
         (if (!verbose) capture.output else function(...) eval.parent(...))(
           dataframe <- munge(dataframe, munge_procedure))
+
         # Store trained munge_procedure
         munge_procedure <<- attr(dataframe, 'mungepieces')
         attr(dataframe, 'mungepieces') <- NULL
       }
 
-      inputs <<- append(list(...), default_args)
+      inputs <<- append(train_args, default_args)
       environment(train_fn) <<- environment()
       (if (!verbose) capture.output else function(...) eval.parent(...))(
-        res <- do.call(function(...) train_fn(dataframe, ...), inputs))
-      res
+        res <- train_fn(dataframe, inputs))
+      trained <<- TRUE
+      res 
     },
 
-    predict = function(dataframe, ..., verbose = FALSE) {
+    predict = function(dataframe, predict_args = list(), verbose = FALSE) {
       if (!trained)
         stop("Tundra model '", keyword, "' has not been trained yet.")
 
@@ -57,7 +58,7 @@ tundra_container <- setRefClass('tundraContainer',
 
       environment(predict_fn) <<- environment()
       (if (!verbose) capture.output else function(...) eval.parent(...))(
-        res <- predict_fn(dataframe, ...))
+        res <- predict_fn(dataframe, predict_args))
       res
     }
   )
