@@ -26,6 +26,7 @@ tundra_gbm_train_fn <- function(dataframe, train_args) {
          n.minobsinnode    = train_args$min_observations,
          train.fraction    = train_args$train_fraction,
          bag.fraction      = train_args$bag_fraction,
+         var.monotone      = train_args$var.monotone,
          keep.data         = TRUE
   ))
 
