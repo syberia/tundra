@@ -10,7 +10,7 @@ tundra_container <- setRefClass('tundraContainer',
                 munge_procedure = 'list',
                 default_args = 'list',
                 trained = 'logical',
-                inputs = 'list',
+                input = 'list',
                 output = 'ANY'),
   methods = list(
     initialize = function(keyword, train_fn, predict_fn,
@@ -38,10 +38,10 @@ tundra_container <- setRefClass('tundraContainer',
         attr(dataframe, 'mungepieces') <- NULL
       }
 
-      inputs <<- append(train_args, default_args)
-      environment(train_fn) <<- environment()
+      input <<- append(train_args, default_args)
+      environment(train_fn) <<- environment() # Allow access to reference class
       (if (!verbose) capture.output else function(...) eval.parent(...))(
-        res <- train_fn(dataframe, inputs))
+        res <- train_fn(dataframe)
       trained <<- TRUE
       res 
     },
@@ -56,7 +56,7 @@ tundra_container <- setRefClass('tundraContainer',
           dataframe <- munge(dataframe, munge_procedure))
       }
 
-      environment(predict_fn) <<- environment()
+      environment(predict_fn) <<- environment() # Allow access to reference class
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- predict_fn(dataframe, predict_args))
       res
