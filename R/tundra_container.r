@@ -39,6 +39,7 @@ tundra_container <- setRefClass('tundraContainer',
       }
 
       input <<- append(train_args, default_args)
+      output <<- list()
       environment(train_fn) <<- environment() # Allow access to reference class
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- train_fn(dataframe)

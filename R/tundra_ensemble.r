@@ -8,15 +8,15 @@ fetch_submodel <- function(model_parameters) {
 }
 
 tundra_ensemble_train_fn <- function(dataframe) {
-  stopifnot('submodels' %in% names(inputs) && 'master' %in% names(inputs))
+  stopifnot('submodels' %in% names(input) && 'master' %in% names(input))
 
-  buckets <- inputs$validation_buckets %||% 10
+  buckets <- input$validation_buckets %||% 10
   if (nrow(dataframe) < buckets) stop('Dataframe too small')
   slice <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
   slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)
 
   meta_dataframe <- do.call(rbind, lapply(slices, function(rows) {
-    sub_df <- data.frame(lapply(inputs$submodels, function(model_parameters) {
+    sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
       model <- fetch_submodel(model_parameters)
       model$train(dataframe[-rows, ])
       model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
@@ -26,11 +26,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
   })
 
   # TODO: Dry this
-  output$master <- fetch_submodel(inputs$master)
+  output$master <- fetch_submodel(input$master)
   output$master$train(meta_dataframe)
 
   # Train final submodels
-  output$submodels <<- lapply(inputs$submodels, function(model_parameters) {
+  output$submodels <<- lapply(input$submodels, function(model_parameters) {
     model <- fetch_submodel(model_parameters)
     model$train(dataframe)
     model
