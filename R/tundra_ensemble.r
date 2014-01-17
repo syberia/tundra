@@ -1,20 +1,24 @@
 #' Tundra ensemble wrapper
+fetch_submodel <- function(model_parameters) {
+  stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
+  if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
+    stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
+  get(model_fn)(model_parameters$data,
+    model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)])
+}
+
 tundra_ensemble_train_fn <- function(dataframe) {
   stopifnot('submodels' %in% names(inputs) && 'master' %in% names(inputs))
 
   buckets <- inputs$validation_buckets %||% 10
   if (nrow(dataframe) < buckets) stop('Dataframe too small')
   slice <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
-  slices <- slice(seq_len(nrow(dataframe)), buckets)
+  slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)
 
   meta_dataframe <- do.call(rbind, lapply(slices, function(rows) {
     sub_df <- data.frame(lapply(inputs$submodels, function(model_parameters) {
-      stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
-      if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
-        stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
-      model <- get(model_fn)(model_parameters$data,
-        model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)])
-      model$train(dataframe[-rows])
+      model <- fetch_submodel(model_parameters)
+      model$train(dataframe[-rows, ])
       model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
     }))
     colnames(sub_df) <- paste0("model", seq_along(sub_df))
@@ -22,21 +26,12 @@ tundra_ensemble_train_fn <- function(dataframe) {
   })
 
   # TODO: Dry this
-  model_parameters <- inputs$master
-  stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
-  if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
-    stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
-  output$master <- get(model_fn)(model_parameters$data,
-    model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)])
+  output$master <- fetch_submodel(inputs$master)
   output$master$train(meta_dataframe)
 
   # Train final submodels
   output$submodels <<- lapply(inputs$submodels, function(model_parameters) {
-    stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
-    if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
-      stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
-    model <- get(model_fn)(model_parameters$data,
-      model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)])
+    model <- fetch_submodel(model_parameters)
     model$train(dataframe)
     model
   })
