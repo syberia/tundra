@@ -42,11 +42,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
 tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
   # TODO: DRY
   meta_dataframe <- data.frame(lapply(output$submodels, function(model) {
-    model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')], verbose = T)
+    model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')])
   }))
   colnames(meta_dataframe) <- paste0("model", seq_along(meta_dataframe))
 
-  output$master$predict(meta_dataframe, verbose = T)
+  output$master$predict(meta_dataframe)
 }
 
 #' @export
