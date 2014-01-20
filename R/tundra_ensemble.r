@@ -3,8 +3,8 @@ fetch_submodel <- function(model_parameters) {
   stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
   if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
     stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
-  get(model_fn)(model_parameters$data,
-    model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)])
+  get(model_fn)(model_parameters$data %||% list(),
+    model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)] %||% list())
 }
 
 tundra_ensemble_train_fn <- function(dataframe) {
@@ -19,14 +19,14 @@ tundra_ensemble_train_fn <- function(dataframe) {
     sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
       model <- fetch_submodel(model_parameters)
       model$train(dataframe[-rows, ])
-      model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
+      res <- model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
     }))
     colnames(sub_df) <- paste0("model", seq_along(sub_df))
     sub_df
-  })
+  }))
 
   # TODO: Dry this
-  output$master <- fetch_submodel(input$master)
+  output$master <<- fetch_submodel(input$master)
   output$master$train(meta_dataframe)
 
   # Train final submodels
@@ -39,7 +39,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   invisible("ensemble")
 }
 
-tundra_ensemble_predict_fn <- function(dataframe, predicts_args) {
+tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
   # TODO: DRY
   meta_dataframe <- data.frame(lapply(output$submodels, function(model) {
     model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')])
