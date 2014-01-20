@@ -42,7 +42,7 @@ tundra_container <- setRefClass('tundraContainer',
       output <<- list()
       environment(train_fn) <<- environment() # Allow access to reference class
       (if (!verbose) capture.output else function(...) eval.parent(...))(
-        res <- train_fn(dataframe)
+        res <- train_fn(dataframe))
       trained <<- TRUE
       res 
     },
@@ -59,7 +59,9 @@ tundra_container <- setRefClass('tundraContainer',
 
       environment(predict_fn) <<- environment() # Allow access to reference class
       (if (!verbose) capture.output else function(...) eval.parent(...))(
-        res <- predict_fn(dataframe, predict_args))
+        res <- if (length(formals(predict_fn)) < 2 || missing(predict_args)) predict_fn(dataframe)
+               else predict_fn(dataframe, predict_args)
+      )
       res
     }
   )
