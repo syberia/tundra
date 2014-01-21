@@ -20,6 +20,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
     sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
       model <- fetch_submodel(model_parameters)
       model$train(dataframe[-rows, ], verbose = TRUE)
+      browser()
       res <- model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
     }))
     colnames(sub_df) <- paste0("model", seq_along(sub_df))
