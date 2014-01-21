@@ -1,5 +1,6 @@
 #' Tundra GBM wrapper
 tundra_gbm_train_fn <- function(dataframe) {
+  cat("Training GBM model...\n")
   require(gbm)
 
   gbm_args <- list()
