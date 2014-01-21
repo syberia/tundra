@@ -31,12 +31,12 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
   # TODO: Dry this
   output$master <<- fetch_submodel(input$master)
-  output$master$train(meta_dataframe)
+  output$master$train(meta_dataframe, verbose = TRUE)
 
   # Train final submodels
   output$submodels <<- lapply(input$submodels, function(model_parameters) {
     model <- fetch_submodel(model_parameters)
-    model$train(dataframe)
+    model$train(dataframe, verbose = TRUE)
     model
   })
 
