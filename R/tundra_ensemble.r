@@ -8,6 +8,7 @@ fetch_submodel <- function(model_parameters) {
 }
 
 tundra_ensemble_train_fn <- function(dataframe) {
+  cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
   stopifnot('submodels' %in% names(input) && 'master' %in% names(input))
 
   buckets <- input$validation_buckets %||% 10
