@@ -16,6 +16,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
   slice <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
   slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)
 
+  attr(dataframe, 'mungepieces') <- NULL
+
   meta_dataframe <- do.call(rbind, lapply(slices, function(rows) {
     sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
       model <- fetch_submodel(model_parameters)
