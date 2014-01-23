@@ -35,6 +35,7 @@ tundra_container <- setRefClass('tundraContainer',
 
         # Store trained munge_procedure
         munge_procedure <<- attr(dataframe, 'mungepieces')
+        # reset mungepieces to NULL after training
         attr(dataframe, 'mungepieces') <- NULL
       }
 
