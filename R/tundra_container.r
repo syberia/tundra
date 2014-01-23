@@ -3,7 +3,7 @@
 #' TODO: Formally define parameter spaces for models
 #' 
 #' @docType class
-tundra_container <- setRefClass('tundraContainer',
+tundra_container <- setRefClass('tundraContainer',  #define reference classes to access by reference instead of by value
   fields = list(keyword = 'character',
                 train_fn = 'function',
                 predict_fn = 'function',
