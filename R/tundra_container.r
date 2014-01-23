@@ -31,7 +31,7 @@ tundra_container <- setRefClass('tundraContainer',
       if (length(munge_procedure) > 0) {
         require(mungebits)
         (if (!verbose) capture.output else function(...) eval.parent(...))(
-          dataframe <- munge(dataframe, munge_procedure))
+          dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
 
         # Store trained munge_procedure
         munge_procedure <<- attr(dataframe, 'mungepieces')
@@ -43,7 +43,7 @@ tundra_container <- setRefClass('tundraContainer',
       output <<- list()
       environment(train_fn) <<- environment() # Allow access to reference class
       (if (!verbose) capture.output else function(...) eval.parent(...))(
-        res <- train_fn(dataframe))
+        res <- train_fn(dataframe))           # Apply train function to dataframe
       trained <<- TRUE
       res 
     },
@@ -55,13 +55,13 @@ tundra_container <- setRefClass('tundraContainer',
       if (length(munge_procedure) > 0) {
         require(mungebits)
         (if (!verbose) capture.output else function(...) eval.parent(...))(
-          dataframe <- munge(dataframe, munge_procedure))
+          dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
       }
 
       environment(predict_fn) <<- environment() # Allow access to reference class
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- if (length(formals(predict_fn)) < 2 || missing(predict_args)) predict_fn(dataframe)
-               else predict_fn(dataframe, predict_args)
+               else predict_fn(dataframe, predict_args)  # Apply predict function to dataframe
       )
       res
     }
