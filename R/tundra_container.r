@@ -24,7 +24,7 @@ tundra_container <- setRefClass('tundraContainer',
       trained <<- FALSE
     },
 
-    train = function(dataframe, train_args = list(), verbose = FALSE) {
+    train = function(dataframe, train_args = list(), verbose = TRUE) {
       if (trained)
         stop("Tundra model '", keyword, "' has already been trained.")
 
@@ -47,7 +47,7 @@ tundra_container <- setRefClass('tundraContainer',
       res 
     },
 
-    predict = function(dataframe, predict_args = list(), verbose = FALSE) {
+    predict = function(dataframe, predict_args = list(), verbose = TRUE) {
       if (!trained)
         stop("Tundra model '", keyword, "' has not been trained yet.")
 
