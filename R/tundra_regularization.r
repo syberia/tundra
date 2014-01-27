@@ -28,7 +28,7 @@ tundra_regularization_train_fn <- function(dataframe) {
 
   lapply(names(defaults), function(name) input[[name]] <<- input[[name]] %||% defaults[[name]])
 
-  regularization_args$x <- as.matrix(create_design_matrix(dataframe[, indep_vars], indep_vars))
+  regularization_args$x <- as.matrix(tundra:::create_design_matrix(dataframe[, indep_vars], indep_vars))
   regularization_args$y <- as.matrix(dataframe[, 'dep_var'])
   regularization_args$family <- input$family
   regularization_args$alpha  <- input$alpha
