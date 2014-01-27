@@ -30,11 +30,14 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
 
       if (length(munge_procedure) > 0) {
         require(mungebits)
+        triggers <- unlist(lapply(munge_procedure,
+                              function(x) inherits(x, 'trigger')))
         (if (!verbose) capture.output else function(...) eval.parent(...))(
           dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
 
         # Store trained munge_procedure
-        munge_procedure <<- attr(dataframe, 'mungepieces')
+        munge_procedure <<- attr(dataframe, 'mungepieces')[!triggers]
+
         # reset mungepieces to NULL after training
         attr(dataframe, 'mungepieces') <- NULL
       }
