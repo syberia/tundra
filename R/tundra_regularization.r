@@ -60,7 +60,7 @@ tundra_regularization_predict_fn <- function(dataframe, predict_args) {
   
   predict.glmnet(object = output$model,
                  newx = as.matrix(create_design_matrix(dataframe[, output$indep_vars])),
-                 output$penalty[[perf_method]], type = type)
+                 perf_method, type = type)
 }
 
 #' @export
