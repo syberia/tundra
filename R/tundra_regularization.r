@@ -1,4 +1,4 @@
-#' Tundra GBM wrapper
+#' Tundra regularization wrapper
 #
 create_design_matrix <- function(dataframe, indep_vars = colnames(dataframe)) {
   model.matrix(as.formula(paste('~', paste(indep_vars, collapse = '+'))), dataframe[, indep_vars])
