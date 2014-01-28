@@ -48,7 +48,7 @@ tundra_regularization_train_fn <- function(dataframe) {
   invisible("regularization")
 }
 
-tundra_regularization_predict_fn <- function(dataframe, predict_args) {
+tundra_regularization_predict_fn <- function(dataframe, predict_args = list()) {
   require(glmnet)
   
   type <- if (is.null(predict_args$prediction_type)) output$prediction_type
