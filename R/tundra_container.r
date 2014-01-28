@@ -42,11 +42,18 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
         attr(dataframe, 'mungepieces') <- NULL
       }
 
+      run_env <- new.env(parent = globalenv())
       input <<- append(train_args, default_args)
-      output <<- list()
-      environment(train_fn) <<- environment() # Allow access to reference class
+      run_env$input <- input; run_env$output <- output
+      debug_flag <- isdebugged(predict_fn)
+      environment(train_fn) <<- run_env
+      if (debug_flag) debug(predict_fn)
+
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- train_fn(dataframe))           # Apply train function to dataframe
+
+      input <<- run_env$input; output <<- run_env$output
+      rm(run_env)
       trained <<- TRUE
       res 
     },
@@ -61,11 +68,18 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
           dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
       }
 
-      environment(predict_fn) <<- environment() # Allow access to reference class
+      run_env <- new.env(parent = globalenv())
+      run_env$input <- input; run_env$output <- output
+      debug_flag <- isdebugged(predict_fn)
+      environment(predict_fn) <<- run_env
+      if (debug_flag) debug(predict_fn)
+
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- if (length(formals(predict_fn)) < 2 || missing(predict_args)) predict_fn(dataframe)
                else predict_fn(dataframe, predict_args)  # Apply predict function to dataframe
       )
+      input <<- run_env$input; output <<- run_env$output
+      rm(run_env)
       res
     }
   )
