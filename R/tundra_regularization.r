@@ -24,12 +24,8 @@ tundra_regularization_train_fn <- function(dataframe) {
 
   lapply(names(defaults), function(name) input[[name]] <<- input[[name]] %||% defaults[[name]])
 
-<<<<<<< HEAD
   regularization_args$x <- model.matrix(as.formula(paste('~', paste(indep_vars, collapse='+'))),
                                         data = dataframe[, indep_vars])
-=======
-  regularization_args$x <- as.matrix(tundra:::create_design_matrix(dataframe[, indep_vars], indep_vars))
->>>>>>> da5b48bb099828df03f830d5a295c23330a0ca2c
   regularization_args$y <- as.matrix(dataframe[, 'dep_var'])
   regularization_args$family <- input$family
   regularization_args$alpha  <- input$alpha
@@ -61,17 +57,11 @@ tundra_regularization_predict_fn <- function(dataframe, predict_args) {
   # s specified, check if cached
   perf_method <- predict_args$penalty %||% input$penalty %||% output$model$lambda.1se
   
-<<<<<<< HEAD
   predict(object = output$model$glmnet.fit,
           newx = 
             model.matrix(as.formula(paste('~', paste(output$indep_vars, collapse = '+'))),
                          dataframe[, output$indep_vars]),
           s = perf_method, type = type)[, 1]
-=======
-  predict.glmnet(object = output$model,
-                 newx = as.matrix(create_design_matrix(dataframe[, output$indep_vars])),
-                 perf_method, type = type)
->>>>>>> da5b48bb099828df03f830d5a295c23330a0ca2c
 }
 
 #' @export
