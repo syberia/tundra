@@ -1,34 +1,31 @@
 #' Tundra GBM wrapper
 #
-create_design_matrix <- function(dataframe, indep_vars = colnames(dataframe)) {
-  model.matrix(as.formula(paste('~', paste(indep_vars, collapse = '+'))), dataframe[, indep_vars])
-}
 
 tundra_regularization_train_fn <- function(dataframe) {
   cat("Training Regularized Logistic Regression model...\n")
-  require(glmnet)
-  
+  library(glmnet)
   regularization_args <- list()
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
   stopifnot(length(indep_vars) > 0)    
   
   defaults <- list(family       ="binomial", 
-                   alpha        = 0,
+                   alpha        = 0.5,
                    nfolds       = 10,
                    standardize  = FALSE, 
-                   type.measure = "deviance",
-                   penalty      = 1
+                   type.measure = "deviance"
+                   #penalty      = 1
               )
   # alpha : 
   # The elasticnet mixing parameter, with 0<=alpha<=1. The penalty is defined as
   # (1-alpha)/[2*(beta)_2_norm^2] + alpha*beta_1_norm
-  # alpha = 1   <=> Lasso penality
-  # alpha = 0.5 <=> Elastic Net penality
-  # alpha = 0   <=> Ridge penality
+  # alpha = 1   <=> Lasso penalty
+  # alpha = 0.5 <=> Elastic Net penalty
+  # alpha = 0   <=> Ridge penalty
 
   lapply(names(defaults), function(name) input[[name]] <<- input[[name]] %||% defaults[[name]])
 
-  regularization_args$x <- as.matrix(create_design_matrix(dataframe[, indep_vars], indep_vars))
+  regularization_args$x <- model.matrix(as.formula(paste('~', paste(indep_vars, collapse='+'))),
+                                        data = dataframe[, indep_vars])
   regularization_args$y <- as.matrix(dataframe[, 'dep_var'])
   regularization_args$family <- input$family
   regularization_args$alpha  <- input$alpha
@@ -36,13 +33,15 @@ tundra_regularization_train_fn <- function(dataframe) {
   regularization_args$standardize  <- input$standardize
   regularization_args$type.measure  <- input$type.measure
 
-
-  # regularization_args <- append(regularization_args,
-  #                        list(distribution = input$distribution
-  #                        ))
-
-  output <<- list(model = do.call(cv.glmnet, regularization_args), indep_vars = indep_vars)
-  
+  #output <<- list(model = do.call(cv.glmnet, regularization_args), indep_vars = indep_vars)
+  output <<- list(model = cv.glmnet( x = regularization_args$x, 
+                        y = regularization_args$y, 
+                        family = regularization_args$family, 
+                        alpha = regularization_args$alpha, 
+                        nfolds = regularization_args$nfolds, 
+                        standardize =  regularization_args$standardize, 
+                        type.measure =  regularization_args$type.measure),
+                  indep_vars = indep_vars)
   if (!is.null(input$prediction_type))
     output$prediction_type <<- input$prediction_type
   
@@ -58,9 +57,11 @@ tundra_regularization_predict_fn <- function(dataframe, predict_args) {
   # s specified, check if cached
   perf_method <- predict_args$penalty %||% input$penalty %||% output$model$lambda.1se
   
-  predict.glmnet(object = output$model,
-                 newx = as.matrix(create_design_matrix(dataframe[, output$indep_vars])),
-                 output$penalty[[perf_method]], type = type)
+  predict(object = output$model$glmnet.fit,
+          newx = 
+            model.matrix(as.formula(paste('~', paste(output$indep_vars, collapse = '+'))),
+                         dataframe[, output$indep_vars]),
+          s = perf_method, type = type)[, 1]
 }
 
 #' @export
