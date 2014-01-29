@@ -48,8 +48,8 @@ tundra_gbm_train_fn <- function(dataframe) {
   invisible("gbm")
 }
 
-tundra_gbm_predict_fn <- function(dataframe, predicts_args) {
-  if (is.null(input$perf_method) && is.null(train_args$perf_method))
+tundra_gbm_predict_fn <- function(dataframe, predict_args = list()) {
+  if (is.null(input$perf_method) && is.null(predict_args$perf_method))
     stop("No GBM performance method specified: must be OOB, test, or cv") 
 
   require(gbm)
@@ -71,7 +71,7 @@ tundra_gbm_predict_fn <- function(dataframe, predicts_args) {
 
 #' @export
 tundra_gbm <- function(munge_procedure = list(), default_args = list()) {
-  tundra_container$new('gbm',
+  tundra:::tundra_container$new('gbm',
                        tundra_gbm_train_fn,
                        tundra_gbm_predict_fn,
                        munge_procedure,
