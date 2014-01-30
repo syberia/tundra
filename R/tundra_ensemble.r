@@ -68,7 +68,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
-      if (length(remaining_rows) == 0) return(predicts)
+      if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
       
       # Trick: since we have already done all the hard work of predicting,
       # we can now just append the remaining rows to the sampled rows (with duplicates)
