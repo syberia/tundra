@@ -37,6 +37,9 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # After the line below, attr(sub_df, 'selected_rows') will have the resampled
       # row numbers relative to the original dataframe.
       sub_df <- munge(dataframe, munge_procedure)
+      # TODO: To prevent canonical names like "selected_rows", this could be determined
+      # heuristically, like looking for an attribute with "rows" in its name or 
+      # one that is an atomic integer vector (except the usual attributes, of course).
       
       # Since we will be training the submodel on the full resampled dataframe
       # later in this block, we can store the resulting trained tundra container
