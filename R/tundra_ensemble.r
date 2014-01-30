@@ -110,7 +110,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
 
-  # TODO: Dry this
   output$master <<- fetch_submodel(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
