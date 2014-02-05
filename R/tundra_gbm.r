@@ -29,6 +29,7 @@ tundra_gbm_train_fn <- function(dataframe) {
          train.fraction    = input$train_fraction,
          bag.fraction      = input$bag_fraction,
          var.monotone      = input$var.monotone,
+         verbose           = TRUE,
          keep.data         = TRUE
   ))
 
