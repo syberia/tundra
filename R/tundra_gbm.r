@@ -49,7 +49,7 @@ tundra_gbm_train_fn <- function(dataframe) {
   invisible("gbm")
 }
 
-tundra_gbm_predict_fn <- function(dataframe, predicts_args) {
+tundra_gbm_predict_fn <- function(dataframe, predict_args = list()) {
   if (is.null(input$perf_method) && is.null(train_args$perf_method))
     stop("No GBM performance method specified: must be OOB, test, or cv") 
 
