@@ -45,9 +45,9 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       run_env <- new.env(parent = globalenv())
       input <<- append(train_args, default_args)
       run_env$input <- input; run_env$output <- output
-      debug_flag <- isdebugged(predict_fn)
+      debug_flag <- isdebugged(train_fn)
       environment(train_fn) <<- run_env
-      if (debug_flag) debug(predict_fn)
+      if (debug_flag) debug(train_fn)
 
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- train_fn(dataframe))           # Apply train function to dataframe
