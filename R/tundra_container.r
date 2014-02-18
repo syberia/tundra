@@ -32,6 +32,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
         require(mungebits)
         triggers <- unlist(lapply(munge_procedure,
                               function(x) inherits(x, 'trigger')))
+        
         (if (!verbose) capture.output else function(...) eval.parent(...))(
           dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
 
@@ -42,9 +43,10 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
         attr(dataframe, 'mungepieces') <- NULL
       }
 
-      run_env <- new.env(parent = globalenv())
+      run_env <- new.env(parent = old_env <- environment(train_fn))
+      on.exit(environment(train_fn) <<- old_env)
       input <<- append(train_args, default_args)
-      run_env$input <- input; run_env$output <- output
+      run_env$input <- input; run_env$output <- list()
       debug_flag <- isdebugged(predict_fn)
       environment(train_fn) <<- run_env
       if (debug_flag) debug(predict_fn)
@@ -84,4 +86,5 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     }
   )
 )
+
 
