@@ -37,6 +37,9 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # After the line below, attr(sub_df, 'selected_rows') will have the resampled
       # row numbers relative to the original dataframe.
       sub_df <- munge(dataframe, munge_procedure)
+      # TODO: To prevent canonical names like "selected_rows", this could be determined
+      # heuristically, like looking for an attribute with "rows" in its name or 
+      # one that is an atomic integer vector (except the usual attributes, of course).
       
       # Since we will be training the submodel on the full resampled dataframe
       # later in this block, we can store the resulting trained tundra container
@@ -65,7 +68,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
-      if (length(remaining_rows) == 0) return(predicts)
+      if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
       
       # Trick: since we have already done all the hard work of predicting,
       # we can now just append the remaining rows to the sampled rows (with duplicates)
@@ -107,7 +110,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
 
-  # TODO: Dry this
   output$master <<- fetch_submodel(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
@@ -124,7 +126,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
 }
 
 tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
-  # TODO: DRY
   meta_dataframe <- data.frame(lapply(output$submodels, function(model) {
     model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')])
   }))
