@@ -40,7 +40,8 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
   else predict_args$OOB
   preds <- predict(object = output$model, newdata = dataframe,
            type = type, OOB = OOB)
-  vapply(preds, function(x) x[[2]], numeric(1))
+  Reduce(rbind, preds)[,grep("1$", colnames(preds[[1]]))]
+  #vapply(preds, function(x) x[[grep("1$", colnames(x))]], numeric(1))
 }
 
 #' @export
