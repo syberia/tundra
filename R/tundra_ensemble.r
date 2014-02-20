@@ -22,8 +22,9 @@ tundra_ensemble_train_fn <- function(dataframe) {
   if (input$resample) {
     # We will be training submodels on the entire resampled dataframe,
     # which we will need for prediction.
+    output <<- list()
     output$submodels <<- list()
-    
+
     # We have to compute along submodels rather than along slices, because
     # we are expecting to resample differently for each submodel. Hence,
     # it would not make sense to recombine resulting predictions row-wise,
