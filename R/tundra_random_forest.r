@@ -38,12 +38,9 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
   # Perf method specified, check if cached
   OOB <- if (is.null(predict_args$perf_method)) input$OOB
   else predict_args$OOB
-  
   preds <- predict(object = output$model, newdata = dataframe,
            type = type, OOB = OOB)
-  preds <- as.data.frame(sapply(c(1, 2), function(x)unlist(preds)[(1+(1:length(unlist(preds)) %% 2)) == x ]))
-  preds_final <- as.numeric(preds[,1]) # just grab P(dep_var = 1)
-  preds_final
+  vapply(preds, function(x) x[[2]], numeric(1))
 }
 
 #' @export
