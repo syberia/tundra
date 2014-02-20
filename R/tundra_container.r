@@ -10,6 +10,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                 munge_procedure = 'list',
                 default_args = 'list',
                 trained = 'logical',
+                sandbox = 'environment',
                 input = 'list',
                 output = 'ANY'),
   methods = list(
@@ -70,11 +71,18 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
           dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
       }
 
+      #sandbox <<- new.env(parent = globalenv())
+      #sandbox$input <<- input
+      #sandbox$output <<- output
+      #environment(predict_fn) <<- sandbox
       run_env <- new.env(parent = globalenv())
       run_env$input <- input; run_env$output <- output
+      
       debug_flag <- isdebugged(predict_fn)
       environment(predict_fn) <<- run_env
+      #environment(predict_fn) <<- environment()
       if (debug_flag) debug(predict_fn)
+      #thisenv <- environment()
 
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- if (length(formals(predict_fn)) < 2 || missing(predict_args)) predict_fn(dataframe)

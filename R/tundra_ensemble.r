@@ -24,7 +24,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
     # which we will need for prediction.
     output <<- list()
     output$submodels <<- list()
-    
+
     # We have to compute along submodels rather than along slices, because
     # we are expecting to resample differently for each submodel. Hence,
     # it would not make sense to recombine resulting predictions row-wise,
@@ -131,6 +131,8 @@ tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
     model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')])
   }))
   colnames(meta_dataframe) <- paste0("model", seq_along(meta_dataframe))
+  print(meta_dataframe)
+  cat("\n\n")
 
   output$master$predict(meta_dataframe)
 }
