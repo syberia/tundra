@@ -11,16 +11,20 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                 default_args = 'list',
                 trained = 'logical',
                 input = 'list',
-                output = 'ANY'),
+                output = 'ANY',
+                internal = 'list' # for storing info about the model
+                ),
   methods = list(
     initialize = function(keyword, train_fn, predict_fn,
                           munge_procedure = list(),
-                          default_args = list()) {
+                          default_args = list(),
+                          internal = list()) {
       keyword <<- keyword
       train_fn <<- train_fn
       predict_fn <<- predict_fn
       munge_procedure <<- munge_procedure
       default_args <<- default_args
+      internal <<- internal
       trained <<- FALSE
     },
 
@@ -32,6 +36,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
         require(mungebits)
         triggers <- unlist(lapply(munge_procedure,
                               function(x) inherits(x, 'trigger')))
+        
         (if (!verbose) capture.output else function(...) eval.parent(...))(
           dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
 
@@ -42,7 +47,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
         attr(dataframe, 'mungepieces') <- NULL
       }
 
-      run_env <- new.env(parent = globalenv())
+      run_env <- new.env(parent = old_env <- environment(train_fn))
+      on.exit(environment(train_fn) <<- old_env)
       input <<- append(train_args, default_args)
       run_env$input <- input; run_env$output <- output
       debug_flag <- isdebugged(train_fn)
@@ -84,4 +90,5 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     }
   )
 )
+
 
