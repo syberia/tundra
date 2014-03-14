@@ -123,7 +123,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
   metalearner_dataframe <- data.frame(metalearner_dataframe)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
-  if (input$cache_dir)
+  # if (input$cache_dir)
+  if ('cache_dir' %in% names(input))
     saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
 
   output$master <<- fetch_submodel(input$master)

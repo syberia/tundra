@@ -1,7 +1,7 @@
 #' Tundra Random Forest wrapper
 #
 tundra_rf_train_fn <- function(dataframe) {
-  cat("Training Random Forest model...\n")
+  # cat("Training Random Forest model...\n")
   require(party)
   
   rf_args <- list()

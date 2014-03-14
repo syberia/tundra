@@ -2,7 +2,7 @@
 #
 
 tundra_regularization_train_fn <- function(dataframe) {
-  cat("Training Regularized Logistic Regression model...\n")
+  # cat("Training Regularized Logistic Regression model...\n")
   library(glmnet)
   regularization_args <- list()
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
