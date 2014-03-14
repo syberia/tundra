@@ -32,14 +32,15 @@ tundra_ensemble_train_fn <- function(dataframe) {
     # which we will need for prediction.
     output <<- list()
     output$submodels <<- list()
-    apply_method <- if (suppressWarnings(require(pbapply))) pblapply else lapply
+    apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
+    apply_method <- get(apply_method_name)
 
     # We have to compute along submodels rather than along slices, because
     # we are expecting to resample differently for each submodel. Hence,
     # it would not make sense to recombine resulting predictions row-wise,
     # only column-wise.
     metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, function(model_parameters) {
-       
+      (if (apply_method_name == 'pblapply') function(...) suppressMessages(suppressWarnings(...)) else force)({
       # Sneak the munge procedure out of the submodel, because we do not
       # want to re-run it many times during n-fold cross-validation.
       munge_procedure <- model_parameters$data %||% list()
@@ -75,7 +76,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # training the model on the whole resampled dataframe, and predicting
       # on the rows that were left out due to resampling to train our meta learner later.
       output$submodels[[ix]]$train(sub_df, verbose = TRUE)
-      if (input$cache_dir)
+      if ('cache_dir' %in% names(input))
         saveRDS(output$submodels[[ix]], paste0(input$cache_dir, '/', ix))
 
       # Record what row indices were left out due to resampling.
@@ -104,6 +105,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
         output$submodels[[ix]]$predict(sub_df[remaining_rows,
           which(colnames(sub_df) != 'dep_var')]))
       predicts[combined_rows]
+      })
     })) # End construction of meta_dataframe
   } else {
     metalearner_dataframe <- do.call(rbind, lapply(slices, function(rows) {
