@@ -19,6 +19,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
   attr(dataframe, 'mungepieces') <- NULL
 
+  #if (!exists('mdf')) {
   if (input$resample) {
     # We will be training submodels on the entire resampled dataframe,
     # which we will need for prediction.
@@ -90,7 +91,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
       predicts <- append(predicts,
-        output$submodels[[ix]]$predict(dataframe[remaining_rows,
+        output$submodels[[ix]]$predict(sub_df[remaining_rows,
           which(colnames(sub_df) != 'dep_var')]))
       predicts[combined_rows]
     })) # End construction of meta_dataframe
@@ -110,6 +111,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   metalearner_dataframe <- data.frame(metalearner_dataframe)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
+  #} else { metalearner_dataframe <<- mdf; output$submodels <<- sm }
 
   output$master <<- fetch_submodel(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)

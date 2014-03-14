@@ -40,8 +40,9 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
   else predict_args$OOB
   preds <- predict(object = output$model, newdata = dataframe,
            type = type, OOB = OOB)
-  Reduce(rbind, preds)[,grep("1$", colnames(preds[[1]]))]
-  #vapply(preds, function(x) x[[grep("1$", colnames(x))]], numeric(1))
+  predsdf <- Reduce(rbind, preds)
+  if (ncol(predsdf) > 1) predsdf[, grep("1$", colnames(preds[[1]]))]
+  else predsdf[, 1]
 }
 
 #' @export
