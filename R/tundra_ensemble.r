@@ -13,7 +13,10 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
   input$resample <- input$resample %||% FALSE
 
-  if (input$cache_dir) input$cache_dir <- normalizePath(input$cache_dir)
+  if ('cache_dir' %in% names(input)) {
+    stopifnot(is.character(input$cache_dir))
+    input$cache_dir <- normalizePath(input$cache_dir)
+  }
   
   buckets <- input$validation_buckets %||% 10
   if (nrow(dataframe) < buckets) stop('Dataframe too small')
