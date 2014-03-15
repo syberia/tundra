@@ -13,7 +13,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
   input$resample <- input$resample %||% FALSE
 
-  if ('cache_dir' %in% names(input)) {
+  use_cache <- 'cache_dir' %in% names(input)
+  if (use_cache) {
     stopifnot(is.character(input$cache_dir))
     input$cache_dir <- normalizePath(input$cache_dir)
   }
@@ -57,6 +58,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # now, rather than pointlessly recalculate later. Use the variable below
       # to keep track of which submodel we're on.
       ix <- length(output$submodels) + 1
+      if (use_cache) {
+        cache_path <- paste0(input$cache_dir, '/', ix)
+        if (file.exists(tmp <- paste0(cache_path, 'p')))
+          return(readRDS(tmp))
+      }
       # Fetch the tundra container for this submodel
       output$submodels[[ix]] <<- fetch_submodel(model_parameters)
       
@@ -76,8 +82,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # training the model on the whole resampled dataframe, and predicting
       # on the rows that were left out due to resampling to train our meta learner later.
       output$submodels[[ix]]$train(sub_df, verbose = TRUE)
-      if ('cache_dir' %in% names(input))
-        saveRDS(output$submodels[[ix]], paste0(input$cache_dir, '/', ix))
+      if (use_cache) saveRDS(output$submodels[[ix]], cache_path)
 
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
@@ -104,7 +109,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
       predicts <- append(predicts,
         output$submodels[[ix]]$predict(sub_df[remaining_rows,
           which(colnames(sub_df) != 'dep_var')]))
-      predicts[combined_rows]
+      if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
+      predicts[combined_rows]                             
       })
     })) # End construction of meta_dataframe
   } else {
@@ -123,8 +129,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   metalearner_dataframe <- data.frame(metalearner_dataframe)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
-  # if (input$cache_dir)
-  if ('cache_dir' %in% names(input))
+  if (use_cache)
     saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
 
   output$master <<- fetch_submodel(input$master)
