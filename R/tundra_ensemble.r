@@ -40,8 +40,20 @@ tundra_ensemble_train_fn <- function(dataframe) {
     # we are expecting to resample differently for each submodel. Hence,
     # it would not make sense to recombine resulting predictions row-wise,
     # only column-wise.
+    ix <- 0
     metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, function(model_parameters) {
       (if (apply_method_name == 'pblapply') function(...) suppressMessages(suppressWarnings(...)) else force)({
+      # Since we will be training the submodel on the full resampled dataframe
+      # later in this block, we can store the resulting trained tundra container
+      # now, rather than pointlessly recalculate later. Use the variable below
+      # to keep track of which submodel we're on.
+      ix <<- ix + 1 #length(output$submodels) + 1
+      if (use_cache) {
+        cache_path <- paste0(input$cache_dir, '/', ix)
+        if (file.exists(tmp <- paste0(cache_path, 'p')))
+          return(as.numeric(as.character(readRDS(tmp)[seq_len(nrow(dataframe))])))
+      }
+
       # Sneak the munge procedure out of the submodel, because we do not
       # want to re-run it many times during n-fold cross-validation.
       munge_procedure <- model_parameters$data %||% list()
@@ -53,16 +65,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # heuristically, like looking for an attribute with "rows" in its name or 
       # one that is an atomic integer vector (except the usual attributes, of course).
       
-      # Since we will be training the submodel on the full resampled dataframe
-      # later in this block, we can store the resulting trained tundra container
-      # now, rather than pointlessly recalculate later. Use the variable below
-      # to keep track of which submodel we're on.
-      ix <- length(output$submodels) + 1
-      if (use_cache) {
-        cache_path <- paste0(input$cache_dir, '/', ix)
-        if (file.exists(tmp <- paste0(cache_path, 'p')))
-          return(readRDS(tmp))
-      }
       # Fetch the tundra container for this submodel
       output$submodels[[ix]] <<- fetch_submodel(model_parameters)
       
@@ -126,7 +128,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   }
 
   rownames(metalearner_dataframe) <- NULL
-  metalearner_dataframe <- data.frame(metalearner_dataframe)
+  metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
   if (use_cache)
