@@ -1,1 +1,2 @@
 export(tundra_gbm)
+export(tundra_regularization)
