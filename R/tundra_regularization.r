@@ -65,10 +65,11 @@ tundra_regularization_predict_fn <- function(dataframe, predict_args = list()) {
 }
 
 #' @export
-tundra_regularization <- function(munge_procedure = list(), default_args = list()) {
+tundra_regularization <- function(munge_procedure = list(), default_args = list(), internal = list()) {
   tundra:::tundra_container$new('regularization',
                        tundra_regularization_train_fn,
                        tundra_regularization_predict_fn,
                        munge_procedure,
-                       default_args)
+                       default_args,
+                       internal)
 }
