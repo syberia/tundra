@@ -70,8 +70,13 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
 
       if (length(munge_procedure) > 0) {
         require(mungebits)
+        initial_nrow <- nrow(dataframe)
         (if (!verbose) capture.output else function(...) eval.parent(...))(
           dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
+        if (nrow(dataframe) != initial_nrow)
+          warning(paste("Some rows were removed during data preparation.",
+                        "Predictions will not match input dataframe."))
+
       }
 
       run_env <- new.env(parent = globalenv())
