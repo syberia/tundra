@@ -29,6 +29,7 @@ tundra_gbm_train_fn <- function(dataframe) {
          train.fraction    = input$train_fraction,
          bag.fraction      = input$bag_fraction,
          var.monotone      = input$var.monotone,
+         verbose           = TRUE,
          keep.data         = TRUE
   ))
 
@@ -70,11 +71,12 @@ tundra_gbm_predict_fn <- function(dataframe, predict_args = list()) {
 }
 
 #' @export
-tundra_gbm <- function(munge_procedure = list(), default_args = list()) {
+tundra_gbm <- function(munge_procedure = list(), default_args = list(), internal = list()) {
   tundra:::tundra_container$new('gbm',
                        tundra_gbm_train_fn,
                        tundra_gbm_predict_fn,
                        munge_procedure,
-                       default_args)
+                       default_args,
+                       internal)
 }
 

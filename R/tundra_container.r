@@ -12,16 +12,20 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                 trained = 'logical',
                 sandbox = 'environment',
                 input = 'list',
-                output = 'ANY'),
+                output = 'ANY',
+                internal = 'list' # for storing info about the model
+                ),
   methods = list(
     initialize = function(keyword, train_fn, predict_fn,
                           munge_procedure = list(),
-                          default_args = list()) {
+                          default_args = list(),
+                          internal = list()) {
       keyword <<- keyword
       train_fn <<- train_fn
       predict_fn <<- predict_fn
       munge_procedure <<- munge_procedure
       default_args <<- default_args
+      internal <<- internal
       trained <<- FALSE
     },
 
@@ -47,10 +51,10 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       run_env <- new.env(parent = old_env <- environment(train_fn))
       on.exit(environment(train_fn) <<- old_env)
       input <<- append(train_args, default_args)
-      run_env$input <- input; run_env$output <- list()
-      debug_flag <- isdebugged(predict_fn)
+      run_env$input <- input; run_env$output <- output
+      debug_flag <- isdebugged(train_fn)
       environment(train_fn) <<- run_env
-      if (debug_flag) debug(predict_fn)
+      if (debug_flag) debug(train_fn)
 
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- train_fn(dataframe))           # Apply train function to dataframe
@@ -67,8 +71,13 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
 
       if (length(munge_procedure) > 0) {
         require(mungebits)
+        initial_nrow <- nrow(dataframe)
         (if (!verbose) capture.output else function(...) eval.parent(...))(
           dataframe <- munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
+        if (nrow(dataframe) != initial_nrow)
+          warning(paste("Some rows were removed during data preparation.",
+                        "Predictions will not match input dataframe."))
+
       }
 
       #sandbox <<- new.env(parent = globalenv())
