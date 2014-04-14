@@ -2,6 +2,7 @@
 # In this case, we wrap everything in the input of the model stage with the stagerunner
 tundra_multistage_train_fn <- function(dataframe) {
   output <- list(modelenv = new.env())
+  output$modelenv$data <- dataframe
   stagerunner <- stageRunner$new(output$modelenv, input[-length(input)]) # last stage is reserved for prediction
   stagerunner$run()
 }
