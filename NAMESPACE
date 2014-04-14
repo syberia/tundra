@@ -1,3 +1,4 @@
+export(tundra_ensemble)
 export(tundra_gbm)
 export(tundra_multistage)
 export(tundra_random_forest)

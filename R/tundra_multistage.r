@@ -6,7 +6,6 @@ tundra_multistage_train_fun <- function(dataframe) {
   stagerunner$run()
 }
 
-
 tundra_multistage_predict_fn <- function(dataframe, predict_args = list()) {
   predict_stagerunner <- stageRunner$new(output$modelenv, input[length(input)]) 
   # stagerunner is a sequential list of functions acting an environment 
@@ -19,11 +18,12 @@ tundra_multistage_predict_fn <- function(dataframe, predict_args = list()) {
 
 
 #' @export
-tundra_multistage <- function(munge_procedure = list(), default_args = list()) {
+tundra_multistage <- function(munge_procedure = list(), default_args = list(), internal = list()) {
   tundra:::tundra_container$new('multistage',
                                 tundra_multistage_train_fn,
                                 tundra_multistage_predict_fn,
                                 munge_procedure,
-                                default_args)
+                                default_args,
+                                internal)
 }
 
