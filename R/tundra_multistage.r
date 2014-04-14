@@ -1,7 +1,7 @@
 # Instead of a complicated tundra container, we allow the user to specify the complexity in the syberia model
 # In this case, we wrap everything in the input of the model stage with the stagerunner
 tundra_multistage_train_fn <- function(dataframe) {
-  output$modelenv <- new.env()
+  output <- list(modelenv = new.env())
   stagerunner <- stageRunner$new(output$modelenv, input[-length(input)]) # last stage is reserved for prediction
   stagerunner$run()
 }
