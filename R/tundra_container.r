@@ -28,11 +28,11 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       trained <<- FALSE
     },
 
-    train = function(dataframe, train_args = list(), verbose = FALSE) {
+    train = function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE) {
       if (trained)
         stop("Tundra model '", keyword, "' has already been trained.")
 
-      if (length(munge_procedure) > 0) {
+      if (length(munge_procedure) > 0 && identical(munge, TRUE)) {
         require(mungebits)
         triggers <- unlist(lapply(munge_procedure,
                               function(x) inherits(x, 'trigger')))
@@ -64,11 +64,11 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       res 
     },
 
-    predict = function(dataframe, predict_args = list(), verbose = FALSE) {
+    predict = function(dataframe, predict_args = list(), verbose = FALSE, munge = TRUE) {
       if (!trained)
         stop("Tundra model '", keyword, "' has not been trained yet.")
 
-      if (length(munge_procedure) > 0) {
+      if (length(munge_procedure) > 0 && identical(munge, TRUE)) {
         require(mungebits)
         initial_nrow <- nrow(dataframe)
         (if (!verbose) capture.output else function(...) eval.parent(...))(
