@@ -161,11 +161,12 @@ tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
 }
 
 #' @export
-tundra_ensemble <- function(munge_procedure = list(), default_args = list()) {
+tundra_ensemble <- function(munge_procedure = list(), default_args = list(), internal = list()) {
   tundra:::tundra_container$new('ensemble',
                        tundra_ensemble_train_fn,
                        tundra_ensemble_predict_fn,
                        munge_procedure,
-                       default_args)
+                       default_args, 
+                       internal = list())
 }
 
