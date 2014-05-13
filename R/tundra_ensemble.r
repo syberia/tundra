@@ -28,7 +28,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
   if (input$resample) {
     packages('parallel')
-
+   
     # We will be training submodels on the entire resampled dataframe,
     # which we will need for prediction.
     output <<- list()
@@ -36,6 +36,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
     apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
     apply_method <- get(apply_method_name)
 
+  
     # We have to compute along submodels rather than along slices, because
     # we are expecting to resample differently for each submodel. Hence,
     # it would not make sense to recombine resulting predictions row-wise,
@@ -71,8 +72,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
-      predicts <- do.call(c, mclapply(slices, function(rows) {
-        # Train submodel on all but the current validation slice.
+      predicts <- do.call(c, lapply(slices, function(rows) {
+        # Train submodel on all but the current validation slice
         output$submodels[[ix]]$train(sub_df[-rows, ], verbose = TRUE)
         on.exit(output$submodels[[ix]]$trained <<- FALSE)
         # Mark untrained so tundra container allows us
@@ -85,7 +86,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # on the rows that were left out due to resampling to train our meta learner later.
       output$submodels[[ix]]$train(sub_df, verbose = TRUE)
       if (use_cache) saveRDS(output$submodels[[ix]], cache_path)
-
+ 
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
       if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
@@ -150,6 +151,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
 }
 
 tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
+
   meta_dataframe <- data.frame(lapply(output$submodels, function(model) {
     model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')])
   }))
