@@ -23,7 +23,7 @@ tundra_regularization_train_fn <- function(dataframe) {
   # alpha = 0   <=> Ridge penalty
 
   lapply(names(defaults), function(name) input[[name]] <<- input[[name]] %||% defaults[[name]])
-
+  if (sum(complete.cases(dataframe)) != nrow(dataframe)) stop("model.matrix will drop rows because some rows have missing values")
   regularization_args$x <- model.matrix(as.formula(paste('~', paste(indep_vars, collapse='+'))),
                                         data = dataframe[, indep_vars])
   regularization_args$y <- as.matrix(dataframe[, 'dep_var'])
