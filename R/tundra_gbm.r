@@ -1,17 +1,27 @@
 #' Tundra GBM wrapper
 #
 tundra_gbm_train_fn <- function(dataframe) {
-  # cat("Training GBM model...\n")
+  cat("Training GBM model...\n")
   require(gbm)
-
+  
   gbm_args <- list()
-  indep_vars <- setdiff(colnames(dataframe), 'dep_var')
+  if(input$distribution == "coxph"){
+    indep_vars <- setdiff(colnames(dataframe), c('dep_var', 'surv_time'))
+  } else {
+    indep_vars <- setdiff(colnames(dataframe), 'dep_var')
+  }
   stopifnot(length(indep_vars) > 0)
-
+  
   if (input$cv) {
-    gbm_args[[1]] <- as.formula(paste('dep_var ~ `',
-                                      paste(indep_vars, collapse = "` + `"),
-                                      '`', sep = ''))
+    if(input$distribution == "coxph"){
+      gbm_args[[1]] <- as.formula(paste('Surv(surv_time, dep_var) ~ `',
+                                        paste(indep_vars, collapse = "` + `"),
+                                        '`', sep = ''))
+    } else {
+      gbm_args[[1]] <- as.formula(paste('dep_var ~ `',
+                                        paste(indep_vars, collapse = "` + `"),
+                                        '`', sep = ''))
+    }
     gbm_args$data <- dataframe
     gbm_args$cv.folds <- input$cv_folds
     gbm_args$n.cores  <- input$number_of_cores
@@ -19,20 +29,18 @@ tundra_gbm_train_fn <- function(dataframe) {
     gbm_args$x <- dataframe[, indep_vars]
     gbm_args$y <- dataframe[, 'dep_var']
   }
-
+  
   gbm_args <- append(gbm_args,
-    list(distribution      = input$distribution,
-         n.trees           = input$number_of_trees,
-         shrinkage         = input$shrinkage_factor,
-         interaction.depth = input$depth,
-         n.minobsinnode    = input$min_observations,
-         train.fraction    = input$train_fraction,
-         bag.fraction      = input$bag_fraction,
-         var.monotone      = input$var.monotone,
-         verbose           = TRUE,
-         keep.data         = TRUE
-  ))
-
+                     list(distribution      = input$distribution,
+                          n.trees           = input$number_of_trees,
+                          shrinkage         = input$shrinkage_factor,
+                          interaction.depth = input$depth,
+                          n.minobsinnode    = input$min_observations,
+                          train.fraction    = input$train_fraction,
+                          bag.fraction      = input$bag_fraction,
+                          var.monotone      = input$var.monotone,
+                          keep.data         = TRUE
+                     ))
   # Hack to prevent a hellbug where the AWS.tools package
   # masks the stopCluster function, causing a problem in gbm training
   assign('stopCluster', parallel::stopCluster, envir = globalenv())
