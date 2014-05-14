@@ -168,7 +168,7 @@ tundra_ensemble <- function(munge_procedure = list(), default_args = list(), int
                        tundra_ensemble_train_fn,
                        tundra_ensemble_predict_fn,
                        munge_procedure,
-                       default_args,
-                       internal)
+                       default_args, 
+                       internal = list())
 }
 
