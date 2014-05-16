@@ -5,12 +5,23 @@ tundra_rf_train_fn <- function(dataframe) {
   require(party)
   
   rf_args <- list()
+  if(input$distribution == "coxph"){
+    indep_vars <- setdiff(colnames(dataframe), c('dep_var', 'surv_time'))
+  } else {
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
+  }
   stopifnot(length(indep_vars) > 0)
   
-  rf_args[[1]] <- as.formula(paste('dep_var ~ `',
+  if(input$distribution == "coxph"){
+    rf_args[[1]] <- as.formula(paste('Surv(surv_time, dep_var) ~ `',
+                                      paste(indep_vars, collapse = "` + `"),
+                                      '`', sep = ''))
+  } else {
+    
+    rf_args[[1]] <- as.formula(paste('dep_var ~ `',
                                       paste(indep_vars, collapse = "` + `"),
                                       '`', sep = ''))  
+  }
   rf_args$data <- dataframe
   rf_args$controls <- cforest_unbiased(input$trees, input$branches)
   
@@ -40,16 +51,21 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
   else predict_args$OOB
   preds <- predict(object = output$model, newdata = dataframe,
            type = type, OOB = OOB)
-  Reduce(rbind, preds)[,grep("1$", colnames(preds[[1]]))]
+  if(input$distribution == "coxph"){
+    preds
+   } else { 
+    Reduce(rbind, preds)[ , grep("1$", colnames(preds[[1]]))]
+  }
   #vapply(preds, function(x) x[[grep("1$", colnames(x))]], numeric(1))
 }
 
 #' @export
-tundra_random_forest <- function(munge_procedure = list(), default_args = list()) {
+tundra_random_forest <- function(munge_procedure = list(), default_args = list(), internal = list() ) {
   tundra:::tundra_container$new('random_forest',
                                 tundra_rf_train_fn,
                                 tundra_rf_predict_fn,
                                 munge_procedure,
-                                default_args)
+                                default_args,
+                                internal )
 }
 
