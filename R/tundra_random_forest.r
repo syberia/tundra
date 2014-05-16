@@ -3,7 +3,7 @@
 tundra_rf_train_fn <- function(dataframe) {
   cat("Training Random Forest model...\n")
   require(party)
-  browser()
+
   rf_args <- list()
   if(input$distribution == "coxph"){
     indep_vars <- setdiff(colnames(dataframe), c('dep_var', 'surv_time'))
@@ -26,7 +26,7 @@ tundra_rf_train_fn <- function(dataframe) {
  # rf_args$data <- dataframe
   rf_args$controls <- cforest_unbiased(input$trees, input$branches)
   
-  set.seed(input$seed %||% 100)
+  #set.seed(input$seed %||% 100)
   output <<- list(model = do.call(cforest, rf_args)) 
   
   if (!is.null(input$prediction_type))
