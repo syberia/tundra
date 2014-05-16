@@ -3,7 +3,7 @@
 tundra_rf_train_fn <- function(dataframe) {
   cat("Training Random Forest model...\n")
   require(party)
-
+  require(survival)
   rf_args <- list()
   if(input$distribution == "coxph"){
     indep_vars <- setdiff(colnames(dataframe), c('dep_var', 'surv_time'))
@@ -46,8 +46,10 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
   # Perf method specified, check if cached
   OOB <- if (is.null(predict_args$perf_method)) input$OOB
   else predict_args$OOB
-  preds <- predict(object = output$model, newdata = dataframe,
-           type = type, OOB = OOB)
+  
+    preds <- predict(object = output$model, newdata = dataframe,
+                     type = type, OOB = OOB)
+
   if(input$distribution == "coxph"){
     preds
    } else { 
