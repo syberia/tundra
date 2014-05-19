@@ -11,16 +11,20 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                 default_args = 'list',
                 trained = 'logical',
                 input = 'list',
-                output = 'ANY'),
+                output = 'ANY',
+                internal = 'list' # for storing info about the model
+                ),
   methods = list(
     initialize = function(keyword, train_fn, predict_fn,
                           munge_procedure = list(),
-                          default_args = list()) {
+                          default_args = list(),
+                          internal = list()) {
       keyword <<- keyword
       train_fn <<- train_fn
       predict_fn <<- predict_fn
       munge_procedure <<- munge_procedure
       default_args <<- default_args
+      internal <<- internal
       trained <<- FALSE
     },
 
