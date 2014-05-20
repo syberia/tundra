@@ -31,7 +31,7 @@ tundra_gbm_train_fn <- function(dataframe) {
          verbose           = TRUE,
          keep.data         = TRUE
   ))
-  if ('var.monotone' %in% names(inputs))
+  if ('var.monotone' %in% names(input))
     gbm_args$var.monotone <- input$var.monotone
 
   # Hack to prevent a hellbug where the AWS.tools package
