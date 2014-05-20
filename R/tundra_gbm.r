@@ -28,10 +28,11 @@ tundra_gbm_train_fn <- function(dataframe) {
          n.minobsinnode    = input$min_observations,
          train.fraction    = input$train_fraction,
          bag.fraction      = input$bag_fraction,
-         var.monotone      = input$var.monotone,
          verbose           = TRUE,
          keep.data         = TRUE
   ))
+  if ('var.monotone' %in% names(inputs))
+    gbm_args$var.monotone <- input$var.monotone
 
   # Hack to prevent a hellbug where the AWS.tools package
   # masks the stopCluster function, causing a problem in gbm training
