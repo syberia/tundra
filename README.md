@@ -1,4 +1,4 @@
 Tundra
 ======
 
-Tundra provides a standardized container format for classifiers developed in R
+SuperTundra provides a standardized container format for classifiers developed in R
