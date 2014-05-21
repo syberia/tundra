@@ -7,11 +7,11 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
   fields = list(keyword = 'character',
                 train_fn = 'function',
                 predict_fn = 'function',
-                munge_procedure = 'list',
+                munge_procedure = 'list',  # tundra contains munge_procedure so that it remembers the data-prep steps
                 default_args = 'list',
                 trained = 'logical',
                 input = 'list',
-                output = 'ANY',
+                output = 'ANY',   # output stores the actual output of the train function (e.g. the model object)
                 internal = 'list' # for storing info about the model
                 ),
   methods = list(
