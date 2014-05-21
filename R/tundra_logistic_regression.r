@@ -10,13 +10,6 @@ tundra_logistic_regression_train_fn <- function(dataframe) {
   # get the list of predictors
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
   stopifnot(length(indep_vars) > 0)    
-  glm_args <- list()
-  
-  glm_args[[1]] <- as.formula(paste('dep_var ~ `',
-                                    paste(indep_vars, collapse = "` + `"),
-                                    '`', sep = ''))
-
-  glm_args$data <- dataframe
   
   # default parameters for the glm 
   defaults <- list(family = "binomial") 
@@ -47,19 +40,29 @@ tundra_logistic_regression_train_fn <- function(dataframe) {
 
 tundra_logistic_regression_predict_fn <- function(dataframe, predict_args = list()) {
 
+  cat("Predicting using Logistic Regression Model (unregularized)\n")
+
   require(glm)
   
-  # don't really understand this
-  type <- if (is.null(predict_args$prediction_type)) output$prediction_type
-          else predict_args$prediction_type
+  # default parameters for prediction
+  defaults <- list(prediction_type = "response")
+
+  # set prediction parameters based on user input and training phase output; otherwise use defaults 
+  lapply(names(defaults), function(name) input[[name]] <<- input[[name]] %||% defaults[[name]])
 
   # get the prediction data
-  model.formula <- as.formula(paste('~', paste(output$indep_vars, collapse = '+'))) 
-  pred.data <- model.matrix(model.formula, dataframe[, output$indep_vars])
+  indep_vars <- output$indep_vars # carried over from the training stage
+  model.formula <- as.formula(paste('~', paste(indep_vars, collapse = '+'))) 
+  pred.data <- model.matrix(model.formula, dataframe[, indep_vars])
+
+  # construction the glm.predict argument list
+  glm_pred_args <- list()
+  glm_pred_args$object <- output$model
+  glm_pred_args$newdata <- pred.data
+  glm_pred_args$type <- input$prediction_type
 
   # do the prediction
-  mypredictions <- predict(object = output$model,
-                           newdata =  pred.data)
+  mypredictions <- do.call(predict.glm, glm_pred_args)
 
   # return the prediction vector
   mypredictions
