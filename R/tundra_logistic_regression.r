@@ -25,7 +25,7 @@ tundra_logistic_regression_train_fn <- function(dataframe) {
   lapply(names(defaults), function(name) input[[name]] <<- input[[name]] %||% defaults[[name]])
 
   # get training data
-  model.formula <- as.formula(paste('~', paste(indep_vars, collapse = '+'))) 
+  model.formula <- as.formula(paste('dep_var ~',paste(indep_vars, collapse = '+'))) 
   pred.data <- model.matrix(model.formula, dataframe[, indep_vars])
 
   # construct glm argument list
