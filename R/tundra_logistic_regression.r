@@ -10,7 +10,14 @@ tundra_logistic_regression_train_fn <- function(dataframe) {
   # get the list of predictors
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
   stopifnot(length(indep_vars) > 0)    
- 
+  glm_args <- list()
+  
+  glm_args[[1]] <- as.formula(paste('dep_var ~ `',
+                                    paste(indep_vars, collapse = "` + `"),
+                                    '`', sep = ''))
+
+  glm_args$data <- dataframe
+  
   # default parameters for the glm 
   defaults <- list(family = "binomial",
                    prediction_type = "response")
