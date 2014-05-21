@@ -12,24 +12,29 @@ tundra_logistic_regression_train_fn <- function(dataframe) {
   stopifnot(length(indep_vars) > 0)    
  
   # default parameters for the glm 
-  defaults <- list(family = "binomial",
-                   prediction_type = "response")
+  defaults <- list(family = "binomial") 
 
   # set glm parameters based on user input; otherwise use defaults
   lapply(names(defaults), function(name) input[[name]] <<- input[[name]] %||% defaults[[name]])
 
+  # get training data
+  model.formula <- as.formula(paste('~', paste(indep_vars, collapse = '+'))) 
+  pred.data <- model.matrix(model.formula, dataframe[, indep_vars])
+
+  # construct glm argument list
+  gml_args <- list()
+  glm_args$formula <- model.formula
+  glm_args$data <- pred.data
+  glm_args$family <- input$family
+
   # train the glm
-  model <- glm(dep_var ~ ., family = inputs$family)
+  model <- do.call(glm, glm_args)
 
   # output model object and other info
   output <<- list(model = model, 
                   indep_vars = indep_vars)
 
-  # copy prediction type to output list 
-  if (!is.null(input$prediction_type))
-     output$prediction_type <<- input$prediction_type
-  
-  # don't know what this does
+  # return this thing invisibly (not quite sure what "this thing" is) 
   invisible("logistic_regression")
 }
 
