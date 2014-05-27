@@ -3,7 +3,7 @@
 
 tundra_logistic_regression_train_fn <- function(dataframe) {
 
-  cat("Training Logistic Regression model (unregularized)...\n")`
+  cat("Training Logistic Regression model (unregularized)...\n")
 
   require(glm)
 
