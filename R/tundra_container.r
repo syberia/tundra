@@ -92,6 +92,10 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       input <<- run_env$input; output <<- run_env$output
       rm(run_env)
       res
+    },
+    
+    munge = function(dataframe) {
+      munge(dataframe, munge_procedure) 
     }
   )
 )
