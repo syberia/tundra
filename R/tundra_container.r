@@ -95,7 +95,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     },
     
     munge = function(dataframe) {
-      munge(dataframe, munge_procedure) 
+      mungebits::munge(dataframe, munge_procedure) 
     }
   )
 )
