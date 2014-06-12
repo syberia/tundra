@@ -6,7 +6,7 @@ before_install:
 install:
 - ./travis-tool.sh install_deps
 - ./travis-tool.sh install_r microbenchmark knitr arules
-- ./travis-tool.sh install_github robertzk/stagerunner robertzk/tundra
+- ./travis-tool.sh install_github robertzk/stagerunner
 - ./travis-tool.sh install_github robertzk/statsUtils robertzk/mungebits
 - ./travis-tool.sh install_github robertzk/mungebitsTransformations
 script: ./travis-tool.sh run_tests
