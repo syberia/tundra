@@ -1,2 +1,2 @@
 library(testthat)
-test_package("syberia")
+test_package("tundra")
