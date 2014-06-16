@@ -17,8 +17,8 @@ tundra_multistage_predict_fn <- function(dataframe, predict_args = list()) {
   # stagerunner is a sequential list of functions acting an environment 
   # and you can execute any function you want on the same environment
   predict_stagerunner$run()
-  out <- output$modelenv$output
-  output$modelenv$output <- NULL
+  out <- output$modelenv$prediction
+  output$modelenv$prediction <- NULL
   out
 }
 
