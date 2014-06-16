@@ -1,26 +1,33 @@
 #' Tundra Random Forest wrapper
 #
 tundra_rf_train_fn <- function(dataframe) {
-  # cat("Training Random Forest model...\n")
+  cat("Training Random Forest model...\n")
   require(party)
-  
+  require(survival)
   rf_args <- list()
+  if(input$distribution == "coxph"){
+    indep_vars <- setdiff(colnames(dataframe), c('dep_var', 'surv_time'))
+  } else {
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
+  }
   stopifnot(length(indep_vars) > 0)
   
-  rf_args[[1]] <- as.formula(paste('dep_var ~ `',
+  if(input$distribution == "coxph") {
+    rf_args$data <- within(dataframe, surv.. <- Surv(surv_time, dep_var))
+    rf_args$formula <- as.formula(paste('surv.. ~ `',
+                                      paste(setdiff(indep_vars, 'surv..'), collapse = "` + `"),
+                                      '`', sep = ''))
+  } else {
+    
+    rf_args$formula <- as.formula(paste('dep_var ~ `',
                                       paste(indep_vars, collapse = "` + `"),
                                       '`', sep = ''))  
-  rf_args$data <- dataframe
-  input$branches <- input$branches %||% round(sqrt(length(dataframe)))
-  rf_args$controls <- cforest_unbiased(ntree = input$trees, mtry = input$branches)
+  }
+ # rf_args$data <- dataframe
+  rf_args$controls <- cforest_unbiased(input$trees, input$branches)
   
-  # Hack to prevent a hellbug where the AWS.tools package
-  # masks the stopCluster function, causing a problem in gbm training
-  assign('stopCluster', parallel::stopCluster, envir = globalenv())
-  set.seed(100)
-  output <<- list(model = do.call(cforest, rf_args))
-  rm('stopCluster', envir = globalenv())
+  #set.seed(input$seed %||% 100)
+  output <<- list(model = do.call(cforest, rf_args)) 
   
   if (!is.null(input$prediction_type))
     output$prediction_type <<- input$prediction_type
@@ -48,10 +55,25 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
 
 #' @export
 tundra_random_forest <- function(munge_procedure = list(), default_args = list()) {
+  
+    preds <- predict(object = output$model, newdata = dataframe,
+                     type = type, OOB = OOB)
+
+  if(input$distribution == "coxph"){
+    preds
+   } else { 
+    Reduce(rbind, preds)[ , grep("1$", colnames(preds[[1]]))]
+  }
+  #vapply(preds, function(x) x[[grep("1$", colnames(x))]], numeric(1))
+}
+
+#' @export
+tundra_random_forest <- function(munge_procedure = list(), default_args = list(), internal = list() ) {
   tundra:::tundra_container$new('random_forest',
                                 tundra_rf_train_fn,
                                 tundra_rf_predict_fn,
                                 munge_procedure,
-                                default_args)
+                                default_args,
+                                internal )
 }
 
