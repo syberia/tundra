@@ -23,4 +23,4 @@ notifications:
     - '%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}
       | Details: %{build_url} | Changes: %{compare_url}'
     rooms:
-      secure: aRKTjGvI84Qw6QWeEcGn2rZ3H8AUZyjU2MHkQJ+ek///fF3n8+fxAcpL1Ppp9tCQfYXRboYOFwIz43WaadcqeW0otFD+3aG22mM+0aovkLFFnIUGmHlH/BfRHV5bviEbQ8ZexRBNv8xYfzAyIGB8OtwQq9SG3Lyv+Hg5dhHjjHk=
+      secure: cbhXOSd0Z5G373Ogd/kow0LdEDKhdi8OfAi072h0qdeuGf4zQqe2K3GT0VGfdhHJBkYxpmMDdF83gSvy37VOJzBg1SUfT7CpFtrsBQU/U2zK2EHRn5hTizTYc/kzneTTqU5F+PipWEeQBlEwlWYy4LB6Bz47Ik+EWXmIFH2srKg=
