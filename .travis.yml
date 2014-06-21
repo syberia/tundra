@@ -8,7 +8,7 @@ install:
 - ./travis-tool.sh install_r microbenchmark knitr arules
 - ./travis-tool.sh install_github robertzk/stagerunner
 - ./travis-tool.sh install_github robertzk/statsUtils robertzk/mungebits
-- ./travis-tool.sh install_github robertzk/mungebitsTransformations
+- ./travis-tool.sh install_github robertzk/syberiaMungebits
 script: ./travis-tool.sh run_tests
 after_failure:
 - ./travis-tool.sh dump_logs
