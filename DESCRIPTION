@@ -1,7 +1,9 @@
 Package: tundra
-Title: Standardized model container format
+Title: Standardized container format for deployment of classifiers.
 Description: Tundra provides a standardized container format for classifiers
-    developed in R
+    developed in R. This allows easier deployment by keeping both the data
+    preparation procedure and the statistics in one place with an easy
+    interface.
 Version: 0.2.1
 Author: Robert Krzyzanowski <technoguyrob@gmail.com>
 Maintainer: Robert Krzyzanowski <technoguyrob@gmail.com>
