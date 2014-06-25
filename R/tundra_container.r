@@ -2,7 +2,7 @@
 #'
 #' TODO: Formally define parameter spaces for models
 #' 
-#' @docType class
+#' @export
 tundra_container <- setRefClass('tundraContainer',  #define reference classes to access by reference instead of by value
   fields = list(keyword = 'character',
                 train_fn = 'function',
@@ -15,7 +15,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                 internal = 'list' # for storing info about the model
                 ),
   methods = list(
-    initialize = function(keyword, train_fn, predict_fn,
+    initialize = function(keyword = character(0),
+                          train_fn = identity, predict_fn = identity,
                           munge_procedure = list(),
                           default_args = list(),
                           internal = list()) {
@@ -99,5 +100,6 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     }
   )
 )
+
 
 

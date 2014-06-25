@@ -3,3 +3,4 @@
 export(tundra_gbm)
 export(tundra_random_forest)
 export(tundra_regularization)
+exportClasses(tundraContainer)
