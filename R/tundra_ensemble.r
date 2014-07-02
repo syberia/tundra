@@ -8,21 +8,23 @@ fetch_submodel <- function(model_parameters) {
 }
 
 tundra_ensemble_train_fn <- function(dataframe) {
-  cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
+
   stopifnot('submodels' %in% names(input) && 'master' %in% names(input))
 
-  input$resample <- input$resample %||% FALSE
+  # Set defaults for other parameters
+  input$resample <- input$resample %||% FALSE   # 
+  buckets <- input$validation_buckets %||% 10   # number of cross validation folds
+  input$seed <- input$seed %||% 0               # seed controls the sampling for cross validation
 
-  use_cache <- 'cache_dir' %in% names(input)
-  if (use_cache) {
-    stopifnot(is.character(input$cache_dir))
-    input$cache_dir <- normalizePath(input$cache_dir)
-  }
+  cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
+
+##  use_cache <- 'cache_dir' %in% names(input)
+##  if (use_cache) {
+##    stopifnot(is.character(input$cache_dir))
+##    input$cache_dir <- normalizePath(input$cache_dir)
+##  }
   
-  buckets <- input$validation_buckets %||% 10
-  if (nrow(dataframe) < buckets) stop('Dataframe too small')
-  slice <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
-  slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)  # cross-validation buckets
+  slices <- split(1:nrow(df), sample.int(buckets, nrow(df), replace=T)) # cross-validation buckets
 
   attr(dataframe, 'mungepieces') <- NULL
 
@@ -161,11 +163,10 @@ tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
 }
 
 #' @export
-tundra_ensemble <- function(munge_procedure = list(), default_args = list()) {
+tundra_ensemble <- function(munge_procedure = list(), default_args = list(), internal = list()) {
   tundra:::tundra_container$new('ensemble',
                        tundra_ensemble_train_fn,
                        tundra_ensemble_predict_fn,
-                       munge_procedure,
-                       default_args)
+                       default_args,
+                       internal)
 }
-
