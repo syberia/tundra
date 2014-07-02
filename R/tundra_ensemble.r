@@ -24,11 +24,12 @@ tundra_ensemble_train_fn <- function(dataframe) {
 ##    input$cache_dir <- normalizePath(input$cache_dir)
 ##  }
   
+##  attr(dataframe, 'mungepieces') <- NULL
+
   slices <- split(1:nrow(df), sample.int(buckets, nrow(df), replace=T)) # cross-validation buckets
 
-  attr(dataframe, 'mungepieces') <- NULL
-
   if (input$resample) {
+
     packages('parallel')
 
     # We will be training submodels on the entire resampled dataframe,
@@ -118,6 +119,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
       })
     })) # End construction of meta_dataframe
   } else {
+
+
+
+
+    print("HIHIHI")
     metalearner_dataframe <- do.call(rbind, lapply(slices, function(rows) {
       sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
         model <- fetch_submodel(model_parameters)
