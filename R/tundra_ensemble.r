@@ -21,12 +21,12 @@ fetch_submodel_container <- function(type, model_parameters) {
 
   # look for associated classifier
   prefilename <- file.path(syberia_root(), 'lib', 'classifiers', type)
-  if (!(file.exists(filename <- paste0(prefilename, '.r')) ||
-        file.exists(filename <- paste0(prefilename, '.R')))) {
+  if ((file.exists(filename <- paste0(prefilename, '.r')) ||
+       file.exists(filename <- paste0(prefilename, '.R')))) {
   
     provided_env <- new.env()
     source(filename, local = provided_env)
-    provided_functions <- parse_custom_classifier(provided_env, type)
+    provided_functions <- syberiaStages:::parse_custom_classifier(provided_env, type)
 
     # create a new tundra container on the fly
     my_tundra_container <-
@@ -109,7 +109,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # one that is an atomic integer vector (except the usual attributes, of course).
       
       # Fetch the tundra container for this submodel
-      output$submodels[[ix]] <<- fetch_submodel_container(model_parameters)
+      output$submodels[[ix]] <<- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
       
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
@@ -160,22 +160,29 @@ tundra_ensemble_train_fn <- function(dataframe) {
     })) # End construction of meta_dataframe
   } else {
 
+    # Remove munge procedure from data.frame
+    # so that it does not get attached to the model tundraContainer.
+    attr(dataframe, 'mungepieces') <- NULL
+
     # function to train on K-1 buckets, predict on 1 holdout bucket
     cv_predict <- function(model_parameters, rows) {
       # get the submodel tundra container
-      model <- fetch_submodel_container(model_parameters)
+      model <- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
       # omit the rows in this bucket and train the submodel
-print("ASDF")
-print(dim(dataframe))
+browser()
       model$train(dataframe[-rows, ], verbose = TRUE)
+
       # get predictions on the holdout data 
-print("HI")
-      res <- model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
+      sub_df <- dataframe[rows,]
+print("HI ROB")
+print(dim(sub_df))
+      res <- model$predict(sub_df,verbose=T)
 print("asdfasdfasdf",res,'\n')
     }
 
 
 print( cv_predict(input$submodels[[1]], c(1,2,3))  )
+stop("done")
 
     # returns a data.frame that contains the predictions on this bucket for all submodels
     function(rows) {
@@ -201,13 +208,13 @@ print( cv_predict(input$submodels[[1]], c(1,2,3))  )
   if (use_cache)
     saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
 
-  output$master <<- fetch_submodel_container(input$master)
+  output$master <<- fetch_submodel_container(input$master[[1]],input$master[-1])
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
   # Train final submodels
   if (!resample) { # If resampling was used, submodels are already trained
     output$submodels <<- lapply(input$submodels, function(model_parameters) {
-      model <- fetch_submodel_container(model_parameters)
+      model <- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
       model$train(dataframe, verbose = TRUE)
       model
     })
