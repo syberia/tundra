@@ -1,24 +1,46 @@
 #' Tundra ensemble wrapper
 
-# 
-fetch_submodel <- function(model_parameters) {
+# return a tundra container for the ensemble submodels
+fetch_submodel_container <- function(type, model_parameters) {
 
-  # model_parameters has form list("model_type", ...)
-  stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
+  stopifnot(is.character(type))
 
-  # check that the requested tundra constructor is in scope
-  if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
-    stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
-
-  # different mungeprocedure for submodel (empty list means use the default mungeprocedure)
+  # additional munge steps for submodel (empty list means use the post-munged data without additional work)
   mungeprocedure <- model_parameters$data %||% list() 
 
   # remaining model parameters (default_args)
-  default_args <- model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)] %||% list()
+  default_args <- model_parameters[which(names(model_parameters) != 'data')] %||% list()
 
-  # construct and return a tundra container
-  get(model_fn)(mungeprocedure, default_args)
- 
+  # internal argument
+  internal <- list()
+
+  # look for associated tundra container
+  if (exists(model_fn <- paste0('tundra_', type))) {
+    return(get(model_fn)(mungeprocedure, default_args))
+  } 
+
+  # look for associated classifier
+  prefilename <- file.path(syberia_root(), 'lib', 'classifiers', type)
+  if (!(file.exists(filename <- paste0(prefilename, '.r')) ||
+        file.exists(filename <- paste0(prefilename, '.R')))) {
+  
+    provided_env <- new.env()
+    source(filename, local = provided_env)
+    provided_functions <- parse_custom_classifier(provided_env, type)
+
+    # create a new tundra container on the fly
+    my_tundra_container <-
+      tundra:::tundra_container$new(type, 
+                                    provided_functions$train, provided_functions$predict,
+                                    mungeprocedure, default_args, internal)
+    return(my_tundra_container)
+
+  }
+  
+  stop("Missing tundra container for keyword '", type, "'. ",
+       "It must exist in the tundra package or be present in ",
+       paste0("lib/classifiers/", type, ".R"), call. = FALSE)
+
 }
 
 tundra_ensemble_train_fn <- function(dataframe) {
@@ -87,7 +109,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # one that is an atomic integer vector (except the usual attributes, of course).
       
       # Fetch the tundra container for this submodel
-      output$submodels[[ix]] <<- fetch_submodel(model_parameters)
+      output$submodels[[ix]] <<- fetch_submodel_container(model_parameters)
       
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
@@ -138,13 +160,35 @@ tundra_ensemble_train_fn <- function(dataframe) {
     })) # End construction of meta_dataframe
   } else {
 
-    metalearner_dataframe <- do.call(rbind, lapply(slices, function(rows) {
-      sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
-        model <- fetch_submodel(model_parameters)
-        model$train(dataframe[-rows, ], verbose = TRUE)
-        res <- model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
-      }))
-      colnames(sub_df) <- paste0("model", seq_along(sub_df))
+    # function to train on K-1 buckets, predict on 1 holdout bucket
+    cv_predict <- function(model_parameters, rows) {
+      # get the submodel tundra container
+      model <- fetch_submodel_container(model_parameters)
+      # omit the rows in this bucket and train the submodel
+print("ASDF")
+print(dim(dataframe))
+      model$train(dataframe[-rows, ], verbose = TRUE)
+      # get predictions on the holdout data 
+print("HI")
+      res <- model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
+print("asdfasdfasdf",res,'\n')
+    }
+
+
+print( cv_predict(input$submodels[[1]], c(1,2,3))  )
+
+    # returns a data.frame that contains the predictions on this bucket for all submodels
+    function(rows) {
+      sub_df <- data.frame(lapply(input$submodels, cv_predict(model_parameters, rows)) )
+      colnames(sub_df) <- paste0("submodel", seq_along(sub_df))
+      sub_df
+    }
+
+    metalearner_dataframe <- do.call(rbind, lapply(slices, 
+    function(rows) {
+      # each column in the sub_df dataframe contains the predictions on this bucket for all submodels
+      sub_df <- data.frame(lapply(input$submodels, cv_predict(model_parameters, rows)) )
+      colnames(sub_df) <- paste0("submodel", seq_along(sub_df))
       sub_df
     }))
 
@@ -157,13 +201,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
   if (use_cache)
     saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
 
-  output$master <<- fetch_submodel(input$master)
+  output$master <<- fetch_submodel_container(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
   # Train final submodels
   if (!resample) { # If resampling was used, submodels are already trained
     output$submodels <<- lapply(input$submodels, function(model_parameters) {
-      model <- fetch_submodel(model_parameters)
+      model <- fetch_submodel_container(model_parameters)
       model$train(dataframe, verbose = TRUE)
       model
     })
