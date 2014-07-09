@@ -89,7 +89,10 @@ tundra_ensemble_train_fn <- function(dataframe) {
     # only column-wise.
     which_submodel <- 0
     
-    ghi <- function(model_parameters) {
+    # get predictions on the bootstrapped data
+    # use CV predictions if for rows in the bootstrap sample
+    # use predictions from a model built on entire bootstrap sample for not-in-sample rows
+    get_bootstrap_preds <- function(model_parameters) {
       
       which_submodel <<- which_submodel + 1
       
@@ -99,6 +102,12 @@ tundra_ensemble_train_fn <- function(dataframe) {
       ##    return(as.numeric(as.character(readRDS(tmp)[seq_len(nrow(dataframe))])))
       ##}
       
+      # create a bootstrap replication of the postmunged dataframe
+      # this should occur BEFORE munging to avoid biasing the CV error
+      selected_rows <- sample.int(nrow(dataframe),replace=T)
+      bs_dataframe <- dataframe[selected_rows,]
+      attr(bs_dataframe, "selected_rows") <- selected_rows
+      
       # Sneak the munge procedure out of the submodel, because we do not
       # want to re-run it many times during n-fold cross-validation.
       munge_procedure <- model_parameters$data %||% list()
@@ -106,14 +115,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       
       # After the line below, attr(sub_df, 'selected_rows') will have the resampled
       # row numbers relative to the original dataframe.
-      sub_df <- munge(dataframe, munge_procedure)
-
-      # create a bootstrap replication of the postmunged dataframe
-      selected_rows <- sample.int(nrow(dataframe),replace=T)
-      #eval(substitute({ 
-      dataframe <- dataframe[selected_rows,]
-      attr(dataframe, "selected_rows") <- selected_rows
-      #}), envir = parent.frame())
+      sub_df <- munge(bs_dataframe, munge_procedure)
 
       # Fetch the tundra container for this submodel
       output$submodels[[which_submodel]] <<- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
@@ -144,7 +146,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
       # Get the predictions for these remaining rows
       if (length(remaining_rows)>0) {
-        rest_of_predictions <- output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,])
+        rest_of_predictions <- 
+          output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,])
       } else {
         rest_of_predictions <- c()
       }
@@ -170,18 +173,15 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # scores and grab the relative indices in that order.
       #if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
       predictions[combined_rows]   
-
     }
     
-    print( length( ghi(input$submodels[[1]]) ) )
-    stop("done")
-  
+    # Get predictions over all submodels
+    suppressMessages(
+      metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, get_bootstrap_preds))
+    )
+    print(metalearner_dataframe)
     
-    fff <- function(model_parameters) {
-      (if (apply_method_name == 'pblapply') function(...) suppressMessages(suppressWarnings(...)) else force)(ghi)
-    }
-    
-    metalearner_dataframe <- do.call(cbind, apply_method(input$submodels,ffff)) # End construction of meta_dataframe
+    stop("hi")
     
   } else {
 
