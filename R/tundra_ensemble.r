@@ -49,7 +49,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
   stopifnot('submodels' %in% names(input) && 'master' %in% names(input))
 
   # Set defaults for other parameters
-  resample <- input$resample %||% FALSE         # 
+  resample <- input$resample %||% FALSE         # whether or not to use bootstrapped replicates of the data
+  replicates <- input$replicates %||% 3         # how many bootstrapped replicates to use if resample = T
   buckets <- input$validation_buckets %||% 10   # number of cross validation folds
   seed <- input$seed %||% 0                     # seed controls the sampling for cross validation
 
@@ -175,13 +176,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
       predictions[combined_rows]   
     }
     
+    # Replicate the submodel list
+    submodel_list <- rep(input$submodels, each=replicates)
+    names(submodel_list) <- paste0(names(submodel_list),'_',1:replicates)
+    
     # Get predictions over all submodels
     suppressMessages(
-      metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, get_bootstrap_preds))
+      metalearner_dataframe <- do.call(cbind, apply_method(submodel_list, get_bootstrap_preds))
     )
+    colnames(metalearner_dataframe) <- names(submodel_list)
     print(metalearner_dataframe)
-    
-    stop("hi")
     
   } else {
 
