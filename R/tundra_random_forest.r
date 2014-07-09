@@ -8,7 +8,7 @@ tundra_rf_train_fn <- function(dataframe) {
   require(survival)
   
   # defaults
-  input$distribution <- input$distribution %||% "any"    
+  input$distribution <<- input$distribution %||% "any"    
   
   # get argument list for random forests
   rf_args <- list()
