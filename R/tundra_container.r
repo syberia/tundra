@@ -65,7 +65,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       res 
     },
 
-    predict = function(dataframe, predict_args = list(), verbose = FALSE, munge = TRUE) {
+    predict = function(dataframe, predict_args = list(), verbose = TRUE, munge = TRUE) {
+      
       if (!trained)
         stop("Tundra model '", keyword, "' has not been trained yet.")
 
