@@ -82,11 +82,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
       attr(dataframe, "selected_rows") <- selected_rows
     #}), envir = parent.frame())
     
-    
-    
-    
-    
-
     # make a list to store submodels
     output <<- list()
     output$submodels <<- list()
@@ -141,7 +136,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
-      predictions <- do.call(c, mclapply(slices, cv_predict))
+      cv_predictions <- do.call(c, mclapply(slices, cv_predict))
 
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
@@ -150,13 +145,14 @@ tundra_ensemble_train_fn <- function(dataframe) {
       #if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
       
       # Record what row indices were left out due to resampling.
-#      remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
-#      if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
-    
-      
-      
-   if (F) {
-        
+      remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
+     # if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
+########
+
+      # Get the predictions for these remaining rows
+      rest_of_predictions <- output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,])
+      predictions <- append(cv_predictions,rest_of_predictions)
+
       # Trick: since we have already done all the hard work of predicting,
       # we can now just append the remaining rows to the sampled rows (with duplicates)
       # and find a sequence parameterizing 1, 2, ..., nrow(dataframe) within
@@ -169,23 +165,18 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # which are indices corresponding to a sequence c(1, 2, 3, 4, 5)
       # inside of c(selected_rows, remaining_rows) = c(2, 2, 4, 5, 4, 1, 3)
       rows_drawer <- append(attr(sub_df, 'selected_rows'), remaining_rows)
-      combined_rows <- vapply(seq_len(nrow(dataframe)), function(x)
-        which(x == rows_drawer)[1], integer(1))
-      
+      combined_rows <- vapply(seq_len(nrow(dataframe)), 
+                              function(x) which(x == rows_drawer)[1], integer(1))
+
       # Now that we have computed a sequence of indices parametrizing 1 .. nrow(dataframe)
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
-      predicts <- append(predicts,
-                         output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,
-                                                               which(colnames(sub_df) != 'dep_var')]))
-      if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
-      predicts[combined_rows]   
-      
-      }
-    }
+      #if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
+      predictions[combined_rows]   
 
+    }
     
-    ghi(input$submodels[[1]])
+    print( length( ghi(input$submodels[[1]]) ) )
     stop("done")
   
     
