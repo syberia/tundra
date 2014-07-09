@@ -75,13 +75,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
     packages('parallel')
     
-    # create a bootstrap replication of the dataframe
-    selected_rows <- sample.int(nrow(dataframe),replace=T)
-    #eval(substitute({ 
-      dataframe <- dataframe[selected_rows,]
-      attr(dataframe, "selected_rows") <- selected_rows
-    #}), envir = parent.frame())
-    
     # make a list to store submodels
     output <<- list()
     output$submodels <<- list()
@@ -106,9 +99,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
       ##    return(as.numeric(as.character(readRDS(tmp)[seq_len(nrow(dataframe))])))
       ##}
       
-      
-### Not sure if these next two chunks must be broken out like this any more:
-
       # Sneak the munge procedure out of the submodel, because we do not
       # want to re-run it many times during n-fold cross-validation.
       munge_procedure <- model_parameters$data %||% list()
@@ -118,7 +108,12 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # row numbers relative to the original dataframe.
       sub_df <- munge(dataframe, munge_procedure)
 
-###
+      # create a bootstrap replication of the postmunged dataframe
+      selected_rows <- sample.int(nrow(dataframe),replace=T)
+      #eval(substitute({ 
+      dataframe <- dataframe[selected_rows,]
+      attr(dataframe, "selected_rows") <- selected_rows
+      #}), envir = parent.frame())
 
       # Fetch the tundra container for this submodel
       output$submodels[[which_submodel]] <<- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
@@ -146,11 +141,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
       
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
-     # if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
-########
 
       # Get the predictions for these remaining rows
-      rest_of_predictions <- output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,])
+      if (length(remaining_rows)>0) {
+        rest_of_predictions <- output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,])
+      } else {
+        rest_of_predictions <- c()
+      }
       predictions <- append(cv_predictions,rest_of_predictions)
 
       # Trick: since we have already done all the hard work of predicting,
