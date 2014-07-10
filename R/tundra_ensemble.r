@@ -194,8 +194,15 @@ tundra_ensemble_train_fn <- function(dataframe) {
         model <- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
         model$train(dataframe, verbose = TRUE)
         model
-      })
+    })
 
+    cat("Test 1:\n")
+    for (i in 1:length(output$submodels)) {
+      p <- output$submodels[[i]]$predict(dataframe)
+      a <- dataframe$dep_var
+      cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
+    }
+    
     # function to train on K-1 buckets, predict on 1 holdout bucket
     cv_predict <- function(model_parameters, rows) {
 
@@ -221,7 +228,10 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
     # get the cross validated scores for all observations and all submodels
     metalearner_dataframe <- do.call(rbind, lapply(slices, cv_predict_all_models))
-
+    
+    # reorder the dataframe so the rows are in the original order
+    rows <- unlist(slices)
+    metalearner_dataframe <- metalearner_dataframe[order(rows),]
   }
 
   # inputs to the metalearner
@@ -229,6 +239,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   if (makeplot) plot(metalearner_dataframe, pch=19, cex=0.5)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
+
+  cat("Test 2:\n")
+  for (i in 1:ncol(metalearner_dataframe)) {
+    a <- dataframe$dep_var
+    p <- metalearner_dataframe[,i]
+    cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
+  }
 
   # add response back onto the data frame
   stopifnot(nrow(metalearner_dataframe)==nrow(dataframe))
@@ -240,6 +257,19 @@ tundra_ensemble_train_fn <- function(dataframe) {
   # train the metalearner
   output$master <<- fetch_submodel_container(input$master[[1]],input$master[-1])
   output$master$train(metalearner_dataframe, verbose = TRUE)
+
+
+
+cat(rep('*',50),'\n')
+print(cor(metalearner_dataframe[,1],metalearner_dataframe$dep_var))
+print(cor(metalearner_dataframe[,2],metalearner_dataframe$dep_var))
+print(cor(metalearner_dataframe[,3],metalearner_dataframe$dep_var))
+
+# simple debugging
+my_model <- output$master$output$model
+best_glm_index <- which.min(my_model$cvm)
+best_glm_coefs <- my_model$glmnet.fit$beta[,best_glm_index]
+print(best_glm_coefs)
 
   invisible("ensemble")
 }

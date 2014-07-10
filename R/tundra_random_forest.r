@@ -58,14 +58,15 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
   # Perf method specified, check if cached
   OOB <- if (is.null(predict_args$perf_method)) input$OOB
   else predict_args$OOB
-  
-  preds <- predict(object = output$model, newdata = dataframe, type = type, OOB = OOB)
 
+  preds <- predict(object = output$model, newdata = dataframe, type = type, OOB = OOB)
+  
   if(input$distribution == "coxph"){
     preds
    } else { 
     Reduce(rbind, preds)[,1]
   }
+
 }
 
 #' @export
