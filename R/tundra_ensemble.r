@@ -56,29 +56,49 @@ tundra_ensemble_train_fn <- function(dataframe) {
   checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
   input$path <- input$path %||% NULL           # where to save the correlation plot of model predictions
 
-  # Set up  
-  if (resample) {
-    cat("Training ensemble composed of ", length(input$submodels), " submodels, ",
-        replicates, " bootstrap replications per submodel...\n", sep='')
-  } else {
-    cat("Training ensemble composed of ", length(input$submodels), " submodels...\n", sep='')
-  }
-  if (seed != 0) set.seed(seed) # set seed 
-
-##  use_cache <- 'cache_dir' %in% names(input)
-##  if (use_cache) {
-##    stopifnot(is.character(input$cache_dir))
-##    input$cache_dir <- normalizePath(input$cache_dir)
-##  }
-
+  # extract pre-trained models
+  pretrained_models <- Filter( function(x) x[[1]]=='tundra', input$submodels )
+  input$submodels <- Filter( function(x) x[[1]]!='tundra', input$submodels )
+  
   # make a list to store submodels
   output <<- list()
   output$submodels <<- list()
-    
+  output$pretrained_models <<- pretrained_models
+  
   # Remove munge procedure from data.frame
   # so that it does not get attached to the model tundraContainer.
+  # Otherwise the data_stage mungeprocedure will be repeated at every train phase
   attr(dataframe, 'mungepieces') <- NULL
+  
+  # Output
+  cat("Training ensemble composed of ", length(input$submodels), " submodels",sep='')
+  if (resample) cat(" (", replicates, " bootstrap replications per submodel)",sep='')
+  if (length(pretrained_models)>0) cat(" and ", length(pretrained_models), " pre-trained models",sep='')
+  cat("...\n")
+  
+  if (length(pretrained_models)>0) {
+    cat("Pre-trained models should only be used if they have been trained on different data!\n")
+  }
+    
+  # set seed
+  if (seed != 0) set.seed(seed)
 
+  ##  use_cache <- 'cache_dir' %in% names(input)
+  ##  if (use_cache) {
+  ##    stopifnot(is.character(input$cache_dir))
+  ##    input$cache_dir <- normalizePath(input$cache_dir)
+  ##  }
+
+  # Get predictions for pre-trained models
+  if (length(pretrained_models)>0) {
+    get_preds <- function(model) {
+      my_model <- readRDS(paste0(model$path,'.rds'))
+      my_model$predict(dataframe)
+    }
+    pretrained_preds <- Reduce(cbind, lapply(pretrained_models,get_preds))
+  }
+  
+  # Get predictions for remaining models
   if (resample) {
     
     # cross-validation buckets (can be sequential since data are randomly ordered anyway)
@@ -224,6 +244,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
     metalearner_dataframe <- metalearner_dataframe[order(rows),]
   }
 
+  # add predictions from pre-existing models
+  if (length(pretrained_models)>0) {
+    metalearner_dataframe <- cbind(pretrained_preds, metalearner_dataframe)
+  }
+  
   # inputs to the metalearner
   rownames(metalearner_dataframe) <- NULL
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
@@ -252,9 +277,25 @@ tundra_ensemble_train_fn <- function(dataframe) {
 }
 
 tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
+  
+  # Get predictions for pre-trained models
+  if (length(output$pretrained_models)>0) {
+    get_preds <- function(model) {
+      my_model <- readRDS(paste0(model$path,'.rds'))
+      my_model$predict(dataframe)
+    }
+    pretrained_preds <- Reduce(cbind, lapply(output$pretrained_models,get_preds))
+  }
+  
   # get submodel scores
   meta_dataframe <- data.frame(lapply(output$submodels, function(model) model$predict(dataframe)))
-  colnames(meta_dataframe) <- paste0("model", seq_along(meta_dataframe))  
+  
+  # construct the predictor matrix
+  if (length(output$pretrained_models)>0) {
+    meta_dataframe <- cbind(pretrained_preds, meta_dataframe)
+  }
+  colnames(meta_dataframe) <- paste0("model", seq_along(meta_dataframe))
+  
   # score the metamodel
   output$master$predict(meta_dataframe)
 }
