@@ -1,10 +1,45 @@
 #' Tundra ensemble wrapper
-fetch_submodel <- function(model_parameters) {
-  stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
-  if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
-    stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
-  get(model_fn)(model_parameters$data %||% list(),
-    model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)] %||% list())
+# return a tundra container for the ensemble submodels
+fetch_submodel_container <- function(modeling_methodology, model_parameters) {
+  
+  stopifnot(is.character(modeling_methodology))
+  
+  # additional munge steps for submodel (empty list means use the post-munged data without additional work)
+  munge_procedure <- model_parameters$data %||% list() 
+  
+  # remaining model parameters (default_args)
+  default_args <- model_parameters[which(names(model_parameters) != 'data')] %||% list()
+  
+  # internal argument
+  internal <- list()
+  
+  # look for associated tundra container
+  if (exists(model_fn <- paste0('tundra_', modeling_methodology))) {
+    return(get(model_fn)(munge_procedure, default_args))
+  } 
+  
+  # look for associated classifier
+  prefilename <- file.path(syberia_root(), 'lib', 'classifiers', modeling_methodology)
+  if ((file.exists(filename <- paste0(prefilename, '.r')) ||
+         file.exists(filename <- paste0(prefilename, '.R')))) {
+    
+    provided_env <- new.env()
+    source(filename, local = provided_env)
+    provided_functions <- syberiaStages:::parse_custom_classifier(provided_env, modeling_methodology)
+    
+    # create a new tundra container on the fly
+    my_tundra_container <-
+      tundra:::tundra_container$new(modeling_methodology, 
+                                    provided_functions$train, provided_functions$predict,
+                                    munge_procedure, default_args, internal)
+    return(my_tundra_container)
+    
+  }
+  
+  stop("Missing tundra container for keyword '", type, "'. ",
+       "It must exist in the tundra package or be present in ",
+       paste0("lib/classifiers/", type, ".R"), call. = FALSE)
+  
 }
 
 tundra_ensemble_train_fn <- function(dataframe) {
@@ -33,15 +68,15 @@ tundra_ensemble_train_fn <- function(dataframe) {
     packages('parallel')
 
     # We will be training submodels on the entire resampled dataframe,
-    # which we will need for prediction.
+    # which are necessary for prediction.
     output <<- list()
     output$submodels <<- list()
     apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
     apply_method <- get(apply_method_name)
 
     # We have to compute along submodels rather than along slices, because
-    # we are expecting to resample differently for each submodel. Hence,
-    # it would not make sense to recombine resulting predictions row-wise,
+    # we expect to resample differently for each submodel. Hence,
+    # it would not make sense to re-combine resulting predictions row-wise,
     # only column-wise.
     ix <- 0
     metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, function(model_parameters) {
@@ -63,6 +98,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       model_parameters$data <- NULL
       # After the line below, attr(sub_df, 'selected_rows') will have the resampled
       # row numbers relative to the original dataframe.
+      
       sub_df <- munge(dataframe, munge_procedure)
       # TODO: To prevent canonical names like "selected_rows", this could be determined
       # heuristically, like looking for an attribute with "rows" in its name or 
