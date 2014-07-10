@@ -56,7 +56,12 @@ tundra_ensemble_train_fn <- function(dataframe) {
   makeplot <- input$makeplot %||% FALSE         # plot predictions from various submodels
 
   # Set up  
-  cat("Training ensemble composed of ", length(input$submodels), " submodels...\n", sep='')
+  if (resample) {
+    cat("Training ensemble composed of ", length(input$submodels), " submodels, ",
+        replicates, " bootstrap replications per submodel...\n", sep='')
+  } else {
+    cat("Training ensemble composed of ", length(input$submodels), " submodels...\n", sep='')
+  }
   if (seed != 0) set.seed(seed) # set seed 
 
 ##  use_cache <- 'cache_dir' %in% names(input)
@@ -73,27 +78,22 @@ tundra_ensemble_train_fn <- function(dataframe) {
   # so that it does not get attached to the model tundraContainer.
   attr(dataframe, 'mungepieces') <- NULL
 
-  # cross-validation buckets
-  if (nrow(dataframe) < buckets) stop('Dataframe too small')
-  slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace=T)) 
-
   if (resample) {
-
-    packages('parallel')
+    
+    # cross-validation buckets (can be sequential since data are randomly ordered anyway)
+    if (nrow(dataframe) < buckets) stop('Dataframe too small')
+    which_slice <- floor(buckets*(1:nrow(dataframe) - 1)/nrow(dataframe))
+    slices <- split(1:nrow(dataframe), which_slice) 
     
     # parallelize if possible
+    packages('parallel')
     apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
     apply_method <- get(apply_method_name)
-    
-    # We have to compute along submodels rather than along slices, because
-    # we are expecting to resample differently for each submodel. Hence,
-    # it would not make sense to recombine resulting predictions row-wise,
-    # only column-wise.
-    which_submodel <- 0
     
     # get predictions on the bootstrapped data
     # use CV predictions if for rows in the bootstrap sample
     # use predictions from a model built on entire bootstrap sample for not-in-sample rows
+    which_submodel <- 0
     get_bootstrap_preds <- function(model_parameters) {
       
       which_submodel <<- which_submodel + 1
@@ -174,7 +174,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
       #if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
-      predictions[combined_rows]   
+      predictions[combined_rows] 
+    
     }
     
     # Replicate the submodel list
@@ -189,6 +190,10 @@ tundra_ensemble_train_fn <- function(dataframe) {
     
   } else {
     
+    # cross-validation buckets
+    if (nrow(dataframe) < buckets) stop('Dataframe too small')
+    slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace=T)) 
+    
     # train submodels on the entire dataframe
     output$submodels <<- lapply(input$submodels, function(model_parameters) {
         model <- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
@@ -196,12 +201,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
         model
     })
 
-    cat("Test 1:\n")
-    for (i in 1:length(output$submodels)) {
-      p <- output$submodels[[i]]$predict(dataframe)
-      a <- dataframe$dep_var
-      cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
-    }
+    # check that predictions are correlated with dep_var
+    #cat("Test 1:\n")
+    #for (i in 1:length(output$submodels)) {
+    #  p <- output$submodels[[i]]$predict(dataframe)
+    #  a <- dataframe$dep_var
+    #  cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
+    #}
     
     # function to train on K-1 buckets, predict on 1 holdout bucket
     cv_predict <- function(model_parameters, rows) {
@@ -228,7 +234,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
     # get the cross validated scores for all observations and all submodels
     metalearner_dataframe <- do.call(rbind, lapply(slices, cv_predict_all_models))
-    
+  
     # reorder the dataframe so the rows are in the original order
     rows <- unlist(slices)
     metalearner_dataframe <- metalearner_dataframe[order(rows),]
@@ -240,12 +246,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
   if (makeplot) plot(metalearner_dataframe, pch=19, cex=0.5)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
 
-  cat("Test 2:\n")
-  for (i in 1:ncol(metalearner_dataframe)) {
-    a <- dataframe$dep_var
-    p <- metalearner_dataframe[,i]
-    cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
-  }
+  # check that predictions are correlated with dep_var
+  #cat("Test 2:\n")
+  #for (i in 1:ncol(metalearner_dataframe)) {
+  #  a <- dataframe$dep_var
+  #  p <- metalearner_dataframe[,i]
+  #  cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
+  #}
 
   # add response back onto the data frame
   stopifnot(nrow(metalearner_dataframe)==nrow(dataframe))
@@ -258,18 +265,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
   output$master <<- fetch_submodel_container(input$master[[1]],input$master[-1])
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
+  # simple debugging
+  #cat(rep('*',50),'\n')
+  #print(cor(metalearner_dataframe[,1],metalearner_dataframe$dep_var))
+  #print(cor(metalearner_dataframe[,2],metalearner_dataframe$dep_var))
+  #print(cor(metalearner_dataframe[,3],metalearner_dataframe$dep_var))
 
-
-cat(rep('*',50),'\n')
-print(cor(metalearner_dataframe[,1],metalearner_dataframe$dep_var))
-print(cor(metalearner_dataframe[,2],metalearner_dataframe$dep_var))
-print(cor(metalearner_dataframe[,3],metalearner_dataframe$dep_var))
-
-# simple debugging
-my_model <- output$master$output$model
-best_glm_index <- which.min(my_model$cvm)
-best_glm_coefs <- my_model$glmnet.fit$beta[,best_glm_index]
-print(best_glm_coefs)
+  #my_model <- output$master$output$model
+  #best_glm_index <- which.min(my_model$cvm)
+  #best_glm_coefs <- my_model$glmnet.fit$beta[,best_glm_index]
+  #print(best_glm_coefs)
 
   invisible("ensemble")
 }
