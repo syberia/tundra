@@ -110,26 +110,17 @@ tundra_ensemble_train_fn <- function(dataframe) {
       bs_dataframe <- dataframe[selected_rows,]
       attr(bs_dataframe, "selected_rows") <- selected_rows
       
-      # Sneak the munge procedure out of the submodel, because we do not
-      # want to re-run it many times during n-fold cross-validation.
-      munge_procedure <- model_parameters$data %||% list()
-      model_parameters$data <- NULL
-      
-      # After the line below, attr(sub_df, 'selected_rows') will have the resampled
-      # row numbers relative to the original dataframe.
-      sub_df <- munge(bs_dataframe, munge_procedure)
-
       # Fetch the tundra container for this submodel
       output$submodels[[which_submodel]] <<- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
       
       # Train model on all slices but one, predict on remaining slice
       cv_predict <- function(rows) {
         # Train submodel on all but the current validation slice.
-        output$submodels[[which_submodel]]$train(sub_df[-rows, ], verbose = TRUE)
+        output$submodels[[which_submodel]]$train(bs_dataframe[-rows, ], verbose = TRUE)
         # Mark untrained so tundra container allows us to train again next iteration.
         on.exit(output$submodels[[which_submodel]]$trained <<- FALSE)
         # predict on the remaining rows not used for training
-        output$submodels[[which_submodel]]$predict(sub_df[rows,])
+        output$submodels[[which_submodel]]$predict(bs_dataframe[rows,])
       }
       
       # Generate predictions for the resampled dataframe using n-fold
@@ -140,16 +131,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
       # on the rows that were left out due to resampling to train our meta learner later.
-      output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
+      output$submodels[[which_submodel]]$train(bs_dataframe, verbose = TRUE)
       #if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
       
       # Record what row indices were left out due to resampling.
-      remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
+      remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(bs_dataframe, 'selected_rows'))
 
       # Get the predictions for these remaining rows
       if (length(remaining_rows)>0) {
         rest_of_predictions <- 
-          output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,])
+          output$submodels[[which_submodel]]$predict(bs_dataframe[remaining_rows,])
       } else {
         rest_of_predictions <- c()
       }
@@ -166,7 +157,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       #   combined_rows <- c(6, 1, 7, 3, 4)
       # which are indices corresponding to a sequence c(1, 2, 3, 4, 5)
       # inside of c(selected_rows, remaining_rows) = c(2, 2, 4, 5, 4, 1, 3)
-      rows_drawer <- append(attr(sub_df, 'selected_rows'), remaining_rows)
+      rows_drawer <- append(attr(bs_dataframe, 'selected_rows'), remaining_rows)
       combined_rows <- vapply(seq_len(nrow(dataframe)), 
                               function(x) which(x == rows_drawer)[1], integer(1))
 
@@ -201,14 +192,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
         model
     })
 
-    # check that predictions are correlated with dep_var
-    #cat("Test 1:\n")
-    #for (i in 1:length(output$submodels)) {
-    #  p <- output$submodels[[i]]$predict(dataframe)
-    #  a <- dataframe$dep_var
-    #  cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
-    #}
-    
     # function to train on K-1 buckets, predict on 1 holdout bucket
     cv_predict <- function(model_parameters, rows) {
 
@@ -246,14 +229,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
   if (makeplot) plot(metalearner_dataframe, pch=19, cex=0.5)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
 
-  # check that predictions are correlated with dep_var
-  #cat("Test 2:\n")
-  #for (i in 1:ncol(metalearner_dataframe)) {
-  #  a <- dataframe$dep_var
-  #  p <- metalearner_dataframe[,i]
-  #  cat("  Submodel ",i,": ",cor(p,a),'\n',sep='')
-  #}
-
   # add response back onto the data frame
   stopifnot(nrow(metalearner_dataframe)==nrow(dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
@@ -264,17 +239,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
   # train the metalearner
   output$master <<- fetch_submodel_container(input$master[[1]],input$master[-1])
   output$master$train(metalearner_dataframe, verbose = TRUE)
-
-  # simple debugging
-  #cat(rep('*',50),'\n')
-  #print(cor(metalearner_dataframe[,1],metalearner_dataframe$dep_var))
-  #print(cor(metalearner_dataframe[,2],metalearner_dataframe$dep_var))
-  #print(cor(metalearner_dataframe[,3],metalearner_dataframe$dep_var))
-
-  #my_model <- output$master$output$model
-  #best_glm_index <- which.min(my_model$cvm)
-  #best_glm_coefs <- my_model$glmnet.fit$beta[,best_glm_index]
-  #print(best_glm_coefs)
 
   invisible("ensemble")
 }
