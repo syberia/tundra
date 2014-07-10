@@ -53,7 +53,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
   replicates <- input$replicates %||% 3         # how many bootstrapped replicates to use if resample = T
   buckets <- input$validation_buckets %||% 10   # number of cross validation folds
   seed <- input$seed %||% 0                     # seed controls the sampling for cross validation
-  makeplot <- input$makeplot %||% FALSE         # plot predictions from various submodels
+  checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
+  input$path <- input$path %||% NULL           # where to save the correlation plot of model predictions
 
   # Set up  
   if (resample) {
@@ -226,7 +227,14 @@ tundra_ensemble_train_fn <- function(dataframe) {
   # inputs to the metalearner
   rownames(metalearner_dataframe) <- NULL
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
-  if (makeplot) plot(metalearner_dataframe, pch=19, cex=0.5)
+  if (checkcorr) {
+    if (!is.null(input$path)) png(paste0(input$path,"preds.png"))
+    plot(metalearner_dataframe, pch=19, cex=0.5, col='#00000010')
+    if (!is.null(input$path)) dev.off()
+    cat("=== Submodel Correlation Matrix ===\n")
+    print(cor(metalearner_dataframe))
+    cat('\n')
+  }
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
 
   # add response back onto the data frame
