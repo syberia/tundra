@@ -47,30 +47,38 @@ tundra_ensemble_train_fn <- function(dataframe) {
   stopifnot('submodels' %in% names(input) && 'master' %in% names(input))
 
   # Set defaults for other parameters
-  input$resample <- input$resample %||% FALSE   # 
+  input$resample <- input$resample %||% FALSE   # whether or not to use bootstrapped replicates of the data
+  replicates <- input$replicates %||% 3         # how many bootstrapped replicates to use if resample = T
   buckets <- input$validation_buckets %||% 10   # number of cross validation folds
   input$seed <- input$seed %||% 0               # seed controls the sampling for cross validation
-
+  checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
+  input$path <- input$path %||% NULL            # where to save the correlation plot of model predictions
+  
   cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
-
+  
 ##  use_cache <- 'cache_dir' %in% names(input)
 ##  if (use_cache) {
 ##    stopifnot(is.character(input$cache_dir))
 ##    input$cache_dir <- normalizePath(input$cache_dir)
 ##  }
   
-##  attr(dataframe, 'mungepieces') <- NULL
+# Remove munge procedure from data.frame
+# so that it does not get attached to the model tundraContainer.
+# Otherwise the data_stage mungeprocedure will be repeated at every train phase
+  attr(dataframe, 'mungepieces') <- NULL
 
   slices <- split(1:nrow(df), sample.int(buckets, nrow(df), replace=T)) # cross-validation buckets
 
   if (input$resample) {
 
     packages('parallel')
-
+    cat(" (", replicates, " bootstrap replications per submodel)", sep='')
     # We will be training submodels on the entire resampled dataframe,
     # which are necessary for prediction.
     output <<- list()
     output$submodels <<- list()
+    output$pretrained_models <<- pretrained_models
+    
     apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
     apply_method <- get(apply_method_name)
 
@@ -155,9 +163,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
       })
     })) # End construction of meta_dataframe
   } else {
-
-
-
 
     print("HIHIHI")
     metalearner_dataframe <- do.call(rbind, lapply(slices, function(rows) {
