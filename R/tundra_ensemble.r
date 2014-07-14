@@ -1,46 +1,13 @@
 #' Tundra ensemble wrapper
 # return a tundra container for the ensemble submodels
-fetch_submodel_container <- function(modeling_methodology, model_parameters) {
-  
-  stopifnot(is.character(modeling_methodology))
-  
-  # additional munge steps for submodel (empty list means use the post-munged data without additional work)
-  munge_procedure <- model_parameters$data %||% list() 
-  
-  # remaining model parameters (default_args)
-  default_args <- model_parameters[which(names(model_parameters) != 'data')] %||% list()
-  
-  # internal argument
-  internal <- list()
-  
-  # look for associated tundra container
-  if (exists(model_fn <- paste0('tundra_', modeling_methodology))) {
-    return(get(model_fn)(munge_procedure, default_args))
-  } 
-  
-  # look for associated classifier
-  prefilename <- file.path(syberia_root(), 'lib', 'classifiers', modeling_methodology)
-  if ((file.exists(filename <- paste0(prefilename, '.r')) ||
-         file.exists(filename <- paste0(prefilename, '.R')))) {
-    
-    provided_env <- new.env()
-    source(filename, local = provided_env)
-    provided_functions <- syberiaStages:::parse_custom_classifier(provided_env, modeling_methodology)
-    
-    # create a new tundra container on the fly
-    my_tundra_container <-
-      tundra:::tundra_container$new(modeling_methodology, 
-                                    provided_functions$train, provided_functions$predict,
-                                    munge_procedure, default_args, internal)
-    return(my_tundra_container)
-    
-  }
-  
-  stop("Missing tundra container for keyword '", type, "'. ",
-       "It must exist in the tundra package or be present in ",
-       paste0("lib/classifiers/", type, ".R"), call. = FALSE)
-  
+fetch_submodel <- function(model_parameters) {
+  stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
+  if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
+    stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
+  get(model_fn)(model_parameters$data %||% list(),
+                model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)] %||% list())
 }
+
 
 tundra_ensemble_train_fn <- function(dataframe) {
 
@@ -56,18 +23,19 @@ tundra_ensemble_train_fn <- function(dataframe) {
   
   cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
   
-##  use_cache <- 'cache_dir' %in% names(input)
-##  if (use_cache) {
-##    stopifnot(is.character(input$cache_dir))
-##    input$cache_dir <- normalizePath(input$cache_dir)
-##  }
+   use_cache <- 'cache_dir' %in% names(input)
+   if (use_cache) {
+     stopifnot(is.character(input$cache_dir))
+     input$cache_dir <- normalizePath(input$cache_dir)
+   }
   
 # Remove munge procedure from data.frame
 # so that it does not get attached to the model tundraContainer.
 # Otherwise the data_stage mungeprocedure will be repeated at every train phase
   attr(dataframe, 'mungepieces') <- NULL
 
-  slices <- split(1:nrow(df), sample.int(buckets, nrow(df), replace=T)) # cross-validation buckets
+  slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace=T)) # cross-validation buckets
+  browser()
 
   if (input$resample) {
 
@@ -77,7 +45,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
     # which are necessary for prediction.
     output <<- list()
     output$submodels <<- list()
-    output$pretrained_models <<- pretrained_models
     
     apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
     apply_method <- get(apply_method_name)
@@ -86,16 +53,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
     # we expect to resample differently for each submodel. Hence,
     # it would not make sense to re-combine resulting predictions row-wise,
     # only column-wise.
-    ix <- 0
+    which_submodel <- 0
     metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, function(model_parameters) {
       (if (apply_method_name == 'pblapply') function(...) suppressMessages(suppressWarnings(...)) else force)({
       # Since we will be training the submodel on the full resampled dataframe
       # later in this block, we can store the resulting trained tundra container
-      # now, rather than pointlessly recalculate later. Use the variable below
+      # now, rather than pointlessly recalculate later. Use the variable 'which_submodel'
       # to keep track of which submodel we're on.
-      ix <<- ix + 1 #length(output$submodels) + 1
+      which_submodel <<- which_submodel + 1 
       if (use_cache) {
-        cache_path <- paste0(input$cache_dir, '/', ix)
+        cache_path <- paste0(input$cache_dir, '/', which_submodel)
         if (file.exists(tmp <- paste0(cache_path, 'p')))
           return(as.numeric(as.character(readRDS(tmp)[seq_len(nrow(dataframe))])))
       }
@@ -113,25 +80,25 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # one that is an atomic integer vector (except the usual attributes, of course).
       
       # Fetch the tundra container for this submodel
-      output$submodels[[ix]] <<- fetch_submodel(model_parameters)
+      output$submodels[[which_submodel]] <<- fetch_submodel(model_parameters)
       
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
       predicts <- do.call(c, mclapply(slices, function(rows) {
         # Train submodel on all but the current validation slice.
-        output$submodels[[ix]]$train(sub_df[-rows, ], verbose = TRUE)
-        on.exit(output$submodels[[ix]]$trained <<- FALSE)
+        output$submodels[[which_submodel]]$train(sub_df[-rows, ], verbose = TRUE)
+        on.exit(output$submodels[[which_submodel]]$trained <<- FALSE)
         # Mark untrained so tundra container allows us
         # to train again next iteration.
-        output$submodels[[ix]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
+        output$submodels[[which_submodel]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
       }))
 
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
       # on the rows that were left out due to resampling to train our meta learner later.
-      output$submodels[[ix]]$train(sub_df, verbose = TRUE)
-      if (use_cache) saveRDS(output$submodels[[ix]], cache_path)
+      output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
+      if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
 
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
@@ -156,7 +123,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
       predicts <- append(predicts,
-        output$submodels[[ix]]$predict(sub_df[remaining_rows,
+        output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,
           which(colnames(sub_df) != 'dep_var')]))
       if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
       predicts[combined_rows]                             
@@ -214,6 +181,7 @@ tundra_ensemble <- function(munge_procedure = list(), default_args = list(), int
   tundra:::tundra_container$new('ensemble',
                        tundra_ensemble_train_fn,
                        tundra_ensemble_predict_fn,
+                       munge_procedure,
                        default_args,
                        internal)
 }
