@@ -1,10 +1,11 @@
 #' Tundra ensemble wrapper
 
 # return a tundra container for the ensemble submodels
-fetch_submodel_container <- function(type, model_parameters) {
-
-  stopifnot(is.character(type))
-
+fetch_submodel_container <- function(model_parameters) {
+  is.character(model_parameters[[1]]))
+  type <- model_parameters[[1]]
+  model_parameters[[1]] <- NULL
+  
   # additional munge steps for submodel (empty list means use the post-munged data without additional work)
   mungeprocedure <- model_parameters$data %||% list() 
 
@@ -208,7 +209,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
     
     # train submodels on the entire dataframe
     output$submodels <<- lapply(input$submodels, function(model_parameters) {
-        model <- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
+        model <- fetch_submodel_container(model_parameters)
         model$train(dataframe, verbose = TRUE)
         model
     })
@@ -217,7 +218,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
     cv_predict <- function(model_parameters, rows) {
 
       # get the submodel tundra container
-      model <- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
+      model <- fetch_submodel_container(model_parameters)
 
       # omit the rows in this bucket and train the submodel
       model$train(dataframe[-rows, ], verbose = TRUE)
@@ -270,7 +271,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   #  saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
 
   # train the metalearner
-  output$master <<- fetch_submodel_container(input$master[[1]],input$master[-1])
+  output$master <<- fetch_submodel_container(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
   invisible("ensemble")
