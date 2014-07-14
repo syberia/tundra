@@ -2,7 +2,7 @@
 
 # return a tundra container for the ensemble submodels
 fetch_submodel_container <- function(model_parameters) {
-  is.character(model_parameters[[1]]))
+  is.character(model_parameters[[1]])
   type <- model_parameters[[1]]
   model_parameters[[1]] <- NULL
   
