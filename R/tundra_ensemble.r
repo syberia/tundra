@@ -35,8 +35,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   attr(dataframe, 'mungepieces') <- NULL
 
   slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace=T)) # cross-validation buckets
-  browser()
-
+  
   if (input$resample) {
 
     packages('parallel')
