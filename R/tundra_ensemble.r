@@ -140,7 +140,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       sub_df
     }))
   }
-
+  browser()
   rownames(metalearner_dataframe) <- NULL
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))

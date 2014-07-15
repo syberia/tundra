@@ -15,12 +15,7 @@ tundra_rf_train_fn <- function(dataframe) {
   input$branches <- input$branches %||% round(sqrt(length(dataframe)))
   rf_args$controls <- cforest_unbiased(ntree = input$trees, mtry = input$branches)
   
-  # Hack to prevent a hellbug where the AWS.tools package
-  # masks the stopCluster function, causing a problem in gbm training
-  assign('stopCluster', parallel::stopCluster, envir = globalenv())
-  set.seed(100)
   output <<- list(model = do.call(cforest, rf_args))
-  rm('stopCluster', envir = globalenv())
   
   if (!is.null(input$prediction_type))
     output$prediction_type <<- input$prediction_type
