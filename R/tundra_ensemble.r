@@ -7,7 +7,7 @@ fetch_submodel_container <- function(model_parameters) {
   model_parameters[[1]] <- NULL
   
   # additional munge steps for submodel (empty list means use the post-munged data without additional work)
-  mungeprocedure <- model_parameters$data %||% list() 
+  munge_procedure <- model_parameters$data %||% list() 
 
   # remaining model parameters (default_args)
   default_args <- model_parameters[which(names(model_parameters) != 'data')] %||% list()
@@ -17,7 +17,7 @@ fetch_submodel_container <- function(model_parameters) {
 
   # look for associated tundra container
   if (exists(model_fn <- paste0('tundra_', type))) {
-    return(get(model_fn)(mungeprocedure, default_args))
+    return(get(model_fn)(munge_procedure, default_args))
   } 
 
   # look for associated classifier
@@ -32,8 +32,11 @@ fetch_submodel_container <- function(model_parameters) {
     # create a new tundra container on the fly
     my_tundra_container <-
       tundra:::tundra_container$new(type, 
-                                    provided_functions$train, provided_functions$predict,
-                                    mungeprocedure, default_args, internal)
+                                    provided_functions$train, 
+                                    provided_functions$predict,
+                                    munge_procedure, 
+                                    default_args, 
+                                    internal)
     return(my_tundra_container)
 
   }
@@ -58,8 +61,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
   input$path <- input$path %||% NULL           # where to save the correlation plot of model predictions
 
   # extract pre-trained models
-  pretrained_models <- Filter( function(x) x[[1]]=='tundra', input$submodels )
-  input$submodels <- Filter( function(x) x[[1]]!='tundra', input$submodels )
+  pretrained_models <- Filter( function(x) x[[1]] == 'tundra', input$submodels )
+  input$submodels <- Filter( function(x) x[[1]] != 'tundra', input$submodels )
   
   # make a list to store submodels
   output <<- list()
@@ -68,35 +71,35 @@ tundra_ensemble_train_fn <- function(dataframe) {
   
   # Remove munge procedure from data.frame
   # so that it does not get attached to the model tundraContainer.
-  # Otherwise the data_stage mungeprocedure will be repeated at every train phase
+  # Otherwise the data_stage munge_procedure will be repeated at every train phase
   attr(dataframe, 'mungepieces') <- NULL
   
   # Output
   cat("Training ensemble composed of ", length(input$submodels), " submodels",sep='')
   if (resample) cat(" (", replicates, " bootstrap replications per submodel)",sep='')
-  if (length(pretrained_models)>0) cat(" and ", length(pretrained_models), " pre-trained models",sep='')
+  if (length(pretrained_models) > 0) cat(" and ", length(pretrained_models), " pre-trained models",sep='')
   cat("...\n")
   
-  if (length(pretrained_models)>0) {
+  if (length(pretrained_models) > 0) {
     cat("Pre-trained models should only be used if they have been trained on different data!\n")
   }
     
   # set seed
   if (seed != 0) set.seed(seed)
 
-  ##  use_cache <- 'cache_dir' %in% names(input)
-  ##  if (use_cache) {
-  ##    stopifnot(is.character(input$cache_dir))
-  ##    input$cache_dir <- normalizePath(input$cache_dir)
-  ##  }
+   use_cache <- 'cache_dir' %in% names(input)
+   if (use_cache) {
+     stopifnot(is.character(input$cache_dir))
+     input$cache_dir <- normalizePath(input$cache_dir)
+   }
 
   # Get predictions for pre-trained models
-  if (length(pretrained_models)>0) {
+  if (length(pretrained_models) > 0) {
     get_preds <- function(model) {
       my_model <- readRDS(paste0(model$path,'.rds'))
       my_model$predict(dataframe)
     }
-    pretrained_preds <- Reduce(cbind, lapply(pretrained_models,get_preds))
+    pretrained_preds <- Reduce(cbind, lapply(pretrained_models, get_preds))
   }
   
   # Get predictions for remaining models
@@ -120,54 +123,50 @@ tundra_ensemble_train_fn <- function(dataframe) {
       
       which_submodel <<- which_submodel + 1
 
-      ##if (use_cache) {
-      ##  cache_path <- paste0(input$cache_dir, '/', which_submodel)
-      ##  if (file.exists(tmp <- paste0(cache_path, 'p')))
-      ##    return(as.numeric(as.character(readRDS(tmp)[seq_len(nrow(dataframe))])))
-      ##}
+      if (use_cache) {
+       cache_path <- paste0(input$cache_dir, '/', which_submodel)
+       if (file.exists(tmp <- paste0(cache_path, 'p')))
+         return(as.numeric(as.character(readRDS(tmp)[seq_len(nrow(dataframe))])))
+      }
       
-      # create a bootstrap replication of the postmunged dataframe
-      # this should occur BEFORE munging to avoid biasing the CV error
-      selected_rows <- sample.int(nrow(dataframe),replace=T)
-      bs_dataframe <- dataframe[selected_rows,]
-      attr(bs_dataframe, "selected_rows") <- selected_rows
+      # Sneak the munge procedure out of the submodel, because we do not
+      # want to re-run it many times during n-fold cross-validation.
+      munge_procedure <- model_parameters$data %||% list()
+      model_parameters$data <- NULL
+      # After the line below, attr(sub_df, 'selected_rows') will have the resampled
+      # row numbers relative to the original dataframe.
+      
+      sub_df <- munge(dataframe, munge_procedure)
+      # TODO: To prevent canonical names like "selected_rows", this could be determined
+      # heuristically, like looking for an attribute with "rows" in its name or 
+      # one that is an atomic integer vector (except the usual attributes, of course).
+      
       
       # Fetch the tundra container for this submodel
-      output$submodels[[which_submodel]] <<- fetch_submodel_container(model_parameters[[1]],model_parameters[-1])
-      
-      # Train model on all slices but one, predict on remaining slice
-      cv_predict <- function(rows) {
-        # Train submodel on all but the current validation slice.
-        output$submodels[[which_submodel]]$train(bs_dataframe[-rows, ], verbose = TRUE)
-        # Mark untrained so tundra container allows us to train again next iteration.
-        on.exit(output$submodels[[which_submodel]]$trained <<- FALSE)
-        # predict on the remaining rows not used for training
-        output$submodels[[which_submodel]]$predict(bs_dataframe[rows,])
-      }
+      output$submodels[[which_submodel]] <<- fetch_submodel_container(model_parameters)
       
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
-      cv_predictions <- do.call(c, mclapply(slices, cv_predict))
-
+      predicts <- do.call(c, mclapply(slices, function(rows) {
+        # Train submodel on all but the current validation slice.
+        output$submodels[[which_submodel]]$train(sub_df[-rows, ], verbose = TRUE)
+        on.exit(output$submodels[[which_submodel]]$trained <<- FALSE)
+        # Mark untrained so tundra container allows us
+        # to train again next iteration.
+        output$submodels[[which_submodel]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
+      }))
+      
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
       # on the rows that were left out due to resampling to train our meta learner later.
-      output$submodels[[which_submodel]]$train(bs_dataframe, verbose = TRUE)
-      #if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
+      output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
+      if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
       
       # Record what row indices were left out due to resampling.
-      remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(bs_dataframe, 'selected_rows'))
-
-      # Get the predictions for these remaining rows
-      if (length(remaining_rows)>0) {
-        rest_of_predictions <- 
-          output$submodels[[which_submodel]]$predict(bs_dataframe[remaining_rows,])
-      } else {
-        rest_of_predictions <- c()
-      }
-      predictions <- append(cv_predictions,rest_of_predictions)
-
+      remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
+      if (length(remaining_rows) == 0) return(predicts)  
+      
       # Trick: since we have already done all the hard work of predicting,
       # we can now just append the remaining rows to the sampled rows (with duplicates)
       # and find a sequence parameterizing 1, 2, ..., nrow(dataframe) within
@@ -179,100 +178,78 @@ tundra_ensemble_train_fn <- function(dataframe) {
       #   combined_rows <- c(6, 1, 7, 3, 4)
       # which are indices corresponding to a sequence c(1, 2, 3, 4, 5)
       # inside of c(selected_rows, remaining_rows) = c(2, 2, 4, 5, 4, 1, 3)
-      rows_drawer <- append(attr(bs_dataframe, 'selected_rows'), remaining_rows)
-      combined_rows <- vapply(seq_len(nrow(dataframe)), 
-                              function(x) which(x == rows_drawer)[1], integer(1))
-
+      rows_drawer <- append(attr(sub_df, 'selected_rows'), remaining_rows)
+      combined_rows <- vapply(seq_len(nrow(dataframe)), function(x)
+        which(x == rows_drawer)[1], integer(1))
+      
       # Now that we have computed a sequence of indices parametrizing 1 .. nrow(dataframe)
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
-      #if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
-      predictions[combined_rows] 
-    
-    }
-    
-    # Replicate the submodel list
-    submodel_list <- rep(input$submodels, each=replicates)
-    names(submodel_list) <- paste0(names(submodel_list),'_',1:replicates)
-    
-    # Get predictions over all submodels
-    suppressMessages(
-      metalearner_dataframe <- do.call(cbind, apply_method(submodel_list, get_bootstrap_preds))
-    )
-    colnames(metalearner_dataframe) <- names(submodel_list)
-    
-  } else {
+      predicts <- append(predicts,
+                         output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,
+                                                                           which(colnames(sub_df) != 'dep_var')]))
+      if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
+      predicts[combined_rows]                             
+    })
+  })) # End construction of meta_dataframe
+ } else {
     
     # cross-validation buckets
     if (nrow(dataframe) < buckets) stop('Dataframe too small')
     slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace=T)) 
+    metalearner_dataframe <- do.call(rbind, lapply(slices, function(rows) {
+      sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
+        model <- fetch_submodel_container(model_parameters)
+        model$train(dataframe[-rows, ], verbose = TRUE)
+        res <- model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
+      }))
+      colnames(sub_df) <- paste0("model", seq_along(sub_df))
+      sub_df
+    }))
+  }
     
-    # train submodels on the entire dataframe
-    output$submodels <<- lapply(input$submodels, function(model_parameters) {
+    rownames(metalearner_dataframe) <- NULL
+    metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
+    colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
+    metalearner_dataframe$dep_var <- dataframe$dep_var
+    if (use_cache)
+      saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
+    
+    output$master <<- fetch_submodel_container(input$master)
+    output$master$train(metalearner_dataframe, verbose = TRUE)
+    
+    # Train final submodels
+    if (!input$resample) { # If resampling was used, submodels are already trained
+      output$submodels <<- lapply(input$submodels, function(model_parameters) {
         model <- fetch_submodel_container(model_parameters)
         model$train(dataframe, verbose = TRUE)
         model
-    })
-
-    # function to train on K-1 buckets, predict on 1 holdout bucket
-    cv_predict <- function(model_parameters, rows) {
-
-      # get the submodel tundra container
-      model <- fetch_submodel_container(model_parameters)
-
-      # omit the rows in this bucket and train the submodel
-      model$train(dataframe[-rows, ], verbose = TRUE)
-
-      # get predictions on the holdout data 
-      sub_df <- dataframe[rows,]
-      res <- model$predict(sub_df)
-
+      })
     }
-
-    # returns a data.frame that contains the predictions on this bucket for all submodels
-    # each column in the sub_df dataframe contains the predictions on this bucket for all submodels
-    cv_predict_all_models <- function(rows) {
-      sub_df <- data.frame(lapply(input$submodels, cv_predict, rows))
-      colnames(sub_df) <- paste0("submodel", seq_along(sub_df))
-      sub_df
-    }
-
-    # get the cross validated scores for all observations and all submodels
-    metalearner_dataframe <- do.call(rbind, lapply(slices, cv_predict_all_models))
-  
-    # reorder the dataframe so the rows are in the original order
-    rows <- unlist(slices)
-    metalearner_dataframe <- metalearner_dataframe[order(rows),]
-  }
 
   # add predictions from pre-existing models
-  if (length(pretrained_models)>0) {
+  if (length(pretrained_models) > 0) {
     metalearner_dataframe <- cbind(pretrained_preds, metalearner_dataframe)
   }
   
-  # inputs to the metalearner
   rownames(metalearner_dataframe) <- NULL
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
-  if (checkcorr) {
-    if (!is.null(input$path)) png(paste0(input$path,"preds.png"))
-    plot(metalearner_dataframe, pch=19, cex=0.5, col='#00000010')
-    if (!is.null(input$path)) dev.off()
-    cat("=== Submodel Correlation Matrix ===\n")
-    print(cor(metalearner_dataframe))
-    cat('\n')
-  }
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
-
-  # add response back onto the data frame
-  stopifnot(nrow(metalearner_dataframe)==nrow(dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
-
-  #if (use_cache)
-  #  saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
-
-  # train the metalearner
+  if (use_cache)
+    saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
+  
   output$master <<- fetch_submodel_container(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)
+  
+  # Train final submodels
+  if (!input$resample) { # If resampling was used, submodels are already trained
+    output$submodels <<- lapply(input$submodels, function(model_parameters) {
+      model <- fetch_submodel_container(model_parameters)
+      model$train(dataframe, verbose = TRUE)
+      model
+    })
+  }
 
   invisible("ensemble")
 }
