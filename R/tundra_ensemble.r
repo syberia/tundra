@@ -15,10 +15,10 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
   # Set defaults for other parameters
   input$resample <- input$resample %||% FALSE   # whether or not to use bootstrapped replicates of the data
-  replicates <- input$replicates %||% 3         # how many bootstrapped replicates to use if resample = T
+  #replicates <- input$replicates %||% 3         # how many bootstrapped replicates to use if resample = T
   buckets <- input$validation_buckets %||% 10   # number of cross validation folds
   input$seed <- input$seed %||% 0               # seed controls the sampling for cross validation
-  checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
+  #checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
   input$path <- input$path %||% NULL            # where to save the correlation plot of model predictions
   
   cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
@@ -35,18 +35,17 @@ tundra_ensemble_train_fn <- function(dataframe) {
   attr(dataframe, 'mungepieces') <- NULL
 
   slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace=T)) # cross-validation buckets
-  
+  apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
+  apply_method <- get(apply_method_name)
+  output <<- list()
+
   if (input$resample) {
 
     packages('parallel')
-    cat(" (", replicates, " bootstrap replications per submodel)", sep='')
+    #cat(" (", replicates, " bootstrap replications per submodel)", sep='')
     # We will be training submodels on the entire resampled dataframe,
     # which are necessary for prediction.
-    output <<- list()
     output$submodels <<- list()
-    
-    apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
-    apply_method <- get(apply_method_name)
 
     # We have to compute along submodels rather than along slices, because
     # we expect to resample differently for each submodel. Hence,
@@ -124,14 +123,14 @@ tundra_ensemble_train_fn <- function(dataframe) {
       predicts <- append(predicts,
         output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,
           which(colnames(sub_df) != 'dep_var')]))
-      if (use_cache) saveRDS(predicts[combined_rows], paste0(cache_path, 'p'))
+      if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = F)
       predicts[combined_rows]                             
       })
     })) # End construction of meta_dataframe
   } else {
-
-    print("HIHIHI")
-    metalearner_dataframe <- do.call(rbind, lapply(slices, function(rows) {
+    
+    print("Start Cross-Validation")
+    metalearner_dataframe <- do.call(rbind, apply_method(slices, function(rows) {
       sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
         model <- fetch_submodel(model_parameters)
         model$train(dataframe[-rows, ], verbose = TRUE)
@@ -147,7 +146,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
   if (use_cache)
-    saveRDS(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe'))
+    write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
 
   output$master <<- fetch_submodel(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)

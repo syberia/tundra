@@ -47,11 +47,12 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
 }
 
 #' @export
-tundra_random_forest <- function(munge_procedure = list(), default_args = list()) {
+tundra_random_forest <- function(munge_procedure = list(), default_args = list(), internal = list()) {
   tundra:::tundra_container$new('random_forest',
                                 tundra_rf_train_fn,
                                 tundra_rf_predict_fn,
                                 munge_procedure,
-                                default_args)
+                                default_args,
+                                internal)
 }
 
