@@ -132,7 +132,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
           which(colnames(sub_df) != 'dep_var')]))
     
       # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
-      output$submodels[[which_submodel]] <<- attr(sub_df, 'mungepieces')
+      output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
       
       if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = F)
       predicts[combined_rows]
