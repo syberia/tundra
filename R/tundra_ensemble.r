@@ -11,13 +11,13 @@ fetch_submodel <- function(model_parameters) {
 
 tundra_ensemble_train_fn <- function(dataframe) {
 
-  stopifnot('submodels' %in% names(input) && 'master' %in% names(input))
+  stopifnot('submodels' %in% names(input) & 'master' %in% names(input))
 
   # Set defaults for other parameters
   input$resample <- input$resample %||% FALSE   # whether or not to use bootstrapped replicates of the data
   #replicates <- input$replicates %||% 3         # how many bootstrapped replicates to use if resample = T
   buckets <- input$validation_buckets %||% 10   # number of cross validation folds
-  input$seed <- input$seed %||% 0               # seed controls the sampling for cross validation
+  #input$seed <- input$seed %||% 0               # seed controls the sampling for cross validation
   #checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
   input$path <- input$path %||% NULL            # where to save the correlation plot of model predictions
   
@@ -34,30 +34,37 @@ tundra_ensemble_train_fn <- function(dataframe) {
 # Otherwise the data_stage mungeprocedure will be repeated at every train phase
   attr(dataframe, 'mungepieces') <- NULL
 
-  slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace=T)) # cross-validation buckets
+  slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace = T)) # cross-validation buckets
+  # If splices = list(`1` = c(1, 3), `2` = c(2, 4)), then unsplit_indices below will be c(1, 2, 1, 2) 
+  # and tell us along which buckets in slices above we should walk along to reconstruct the sequence 1:4.
+  unsplit_indices <-
+    vapply(seq_len(nrow(dataframe)), function(x) which(sapply(slices, is.element, el = x)), integer(1))
+
   apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
   apply_method <- get(apply_method_name)
   output <<- list()
 
   if (input$resample) {
-
+    library(caret)
     packages('parallel')
     #cat(" (", replicates, " bootstrap replications per submodel)", sep='')
     # We will be training submodels on the entire resampled dataframe,
     # which are necessary for prediction.
     output$submodels <<- list()
-
+    
     # We have to compute along submodels rather than along slices, because
     # we expect to resample differently for each submodel. Hence,
     # it would not make sense to re-combine resulting predictions row-wise,
     # only column-wise.
     which_submodel <- 0
+
     metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, function(model_parameters) {
       (if (apply_method_name == 'pblapply') function(...) suppressMessages(suppressWarnings(...)) else force)({
       # Since we will be training the submodel on the full resampled dataframe
       # later in this block, we can store the resulting trained tundra container
       # now, rather than pointlessly recalculate later. Use the variable 'which_submodel'
-      # to keep track of which submodel we're on.
+      # to keep track of which submodel we're on.  
+        
       which_submodel <<- which_submodel + 1 
       if (use_cache) {
         cache_path <- paste0(input$cache_dir, '/', which_submodel)
@@ -83,14 +90,14 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
-      predicts <- do.call(c, mclapply(slices, function(rows) {
+      predicts <- unsplit(lapply(slices, function(rows) {
         # Train submodel on all but the current validation slice.
         output$submodels[[which_submodel]]$train(sub_df[-rows, ], verbose = TRUE)
         on.exit(output$submodels[[which_submodel]]$trained <<- FALSE)
         # Mark untrained so tundra container allows us
         # to train again next iteration.
         output$submodels[[which_submodel]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
-      }))
+      }), unsplit_indices)
 
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
@@ -100,7 +107,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
 
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
-      if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
+      #if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
       
       # Trick: since we have already done all the hard work of predicting,
       # we can now just append the remaining rows to the sampled rows (with duplicates)
@@ -120,11 +127,15 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Now that we have computed a sequence of indices parametrizing 1 .. nrow(dataframe)
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
-      predicts <- append(predicts,
+      if (length(remaining_rows) > 0) predicts <- append(predicts,
         output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,
           which(colnames(sub_df) != 'dep_var')]))
+    
+      # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
+      output$submodels[[which_submodel]] <<- attr(sub_df, 'mungepieces')
+      
       if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = F)
-      predicts[combined_rows]                             
+      predicts[combined_rows]
       })
     })) # End construction of meta_dataframe
   } else {
@@ -139,11 +150,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
       colnames(sub_df) <- paste0("model", seq_along(sub_df))
       sub_df
     }))
+    metalearner_dataframe <- metalearner_dataframe[order(unlist(slices)), ]
   }
-  browser()
+  
   rownames(metalearner_dataframe) <- NULL
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
+  if(input$checkcorr) print(cor(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
   if (use_cache)
     write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
