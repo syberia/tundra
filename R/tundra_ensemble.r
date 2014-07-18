@@ -37,14 +37,17 @@ tundra_ensemble_train_fn <- function(dataframe) {
   slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace = T)) # cross-validation buckets
   # If splices = list(`1` = c(1, 3), `2` = c(2, 4)), then unsplit_indices below will be c(1, 2, 1, 2) 
   # and tell us along which buckets in slices above we should walk along to reconstruct the sequence 1:4.
-  unsplit_indices <-
-    vapply(seq_len(nrow(dataframe)), function(x) which(sapply(slices, is.element, el = x)), integer(1))
+  #unsplit_indices <-
+  #  vapply(seq_len(nrow(dataframe)), function(x) which(sapply(slices, is.element, el = x)), integer(1))
 
   apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
   apply_method <- get(apply_method_name)
   output <<- list()
 
   if (input$resample) {
+    slice  <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
+    slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)
+    
     library(caret)
     packages('parallel')
     #cat(" (", replicates, " bootstrap replications per submodel)", sep='')
@@ -90,14 +93,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
-      predicts <- unsplit(lapply(slices, function(rows) {
+      # browser()
+      predicts <- unlist(lapply(slices, function(rows) {
         # Train submodel on all but the current validation slice.
         output$submodels[[which_submodel]]$train(sub_df[-rows, ], verbose = TRUE)
         on.exit(output$submodels[[which_submodel]]$trained <<- FALSE)
         # Mark untrained so tundra container allows us
         # to train again next iteration.
         output$submodels[[which_submodel]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
-      }), unsplit_indices)
+      }))
+  
 
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
@@ -132,9 +137,9 @@ tundra_ensemble_train_fn <- function(dataframe) {
           which(colnames(sub_df) != 'dep_var')]))
     
       # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
-      output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
+       output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
       
-      if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = F)
+      if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = FALSE)
       predicts[combined_rows]
       })
     })) # End construction of meta_dataframe
