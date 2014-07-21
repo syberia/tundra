@@ -1,5 +1,5 @@
 .onAttach <- function(...) {
   require(mungebits)
-  require(mungebitsTransformations)
+  require(syberiaMungebits)
   require(stagerunner)
 }
