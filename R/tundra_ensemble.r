@@ -80,7 +80,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
       model_parameters$data <- NULL
       # After the line below, attr(sub_df, 'selected_rows') will have the resampled
       # row numbers relative to the original dataframe.
-
       sub_df <- munge(dataframe, munge_procedure)
       # TODO: To prevent canonical names like "selected_rows", this could be determined
       # heuristically, like looking for an attribute with "rows" in its name or 
@@ -102,7 +101,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
         output$submodels[[which_submodel]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
       }))
   
-
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
       # on the rows that were left out due to resampling to train our meta learner later.
@@ -128,6 +126,10 @@ tundra_ensemble_train_fn <- function(dataframe) {
       combined_rows <- vapply(seq_len(nrow(dataframe)), function(x)
          which(x == rows_drawer)[1], integer(1))
       
+      
+      # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
+      output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
+      
       # Now that we have computed a sequence of indices parametrizing 1 .. nrow(dataframe)
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
@@ -135,9 +137,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
         output$submodels[[which_submodel]]$predict(dataframe[remaining_rows,  #bug is here !!!!! sub_df doesn't have the remaining_rows we wanted!!!!
           which(colnames(dataframe) != 'dep_var')]))
     
-      # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
-       output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
-      
       if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = FALSE)
       predicts[combined_rows]
       })

@@ -23,7 +23,7 @@ tundra_rf_train_fn <- function(dataframe) {
 }
 
 tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
-  #    data.frame$loan_id  # trick: when one is not sure what is going on with new data pre-proccessing procedures or new models, just return loan_ids 
+#  dataframe$loan_id  # trick: when one is not sure what is going on with new data pre-proccessing procedures or new models, just return loan_ids 
   if (is.null(input$OOB) && is.null(predict_args$OOB))
    stop("No Random Forest performance method specified: must specify OOB") 
   

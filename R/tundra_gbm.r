@@ -50,7 +50,7 @@ tundra_gbm_train_fn <- function(dataframe) {
 }
 
 tundra_gbm_predict_fn <- function(dataframe, predict_args = list()) {
-#    data.frame$loan_id  # trick: when one is not sure what is going on with new data pre-proccessing procedures or new models, just return loan_ids 
+# dataframe$loan_id  # trick: when one is not sure what is going on with new data pre-proccessing procedures or new models, just return loan_ids 
   if (is.null(input$perf_method) && is.null(predict_args$perf_method))
     stop("No GBM performance method specified: must be OOB, test, or cv") 
 

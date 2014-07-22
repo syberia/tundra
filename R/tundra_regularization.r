@@ -56,7 +56,7 @@ tundra_regularization_predict_fn <- function(dataframe, predict_args = list()) {
   
   # s specified, check if cached
   perf_method <- predict_args$penalty %||% input$penalty %||% output$model$lambda.1se
-  
+  browser()
   predict(object = output$model$glmnet.fit,
           newx = 
             model.matrix(as.formula(paste('~', paste(output$indep_vars, collapse = '+'))),
