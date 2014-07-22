@@ -101,5 +101,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
   )
 )
 
+summary.tundraContainer <- function(x, ...) summary(x$output$model, ...)
+
 
 
