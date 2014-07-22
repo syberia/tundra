@@ -18,7 +18,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   #replicates <- input$replicates %||% 3         # how many bootstrapped replicates to use if resample = T
   buckets <- input$validation_buckets %||% 10   # number of cross validation folds
   #input$seed <- input$seed %||% 0               # seed controls the sampling for cross validation
-  #checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
+  checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
   input$path <- input$path %||% NULL            # where to save the correlation plot of model predictions
   
   cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
@@ -66,8 +66,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Since we will be training the submodel on the full resampled dataframe
       # later in this block, we can store the resulting trained tundra container
       # now, rather than pointlessly recalculate later. Use the variable 'which_submodel'
-      # to keep track of which submodel we're on.  
-        
+      # to keep track of which submodel we're on.          
       which_submodel <<- which_submodel + 1 
       if (use_cache) {
         cache_path <- paste0(input$cache_dir, '/', which_submodel)
@@ -81,7 +80,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       model_parameters$data <- NULL
       # After the line below, attr(sub_df, 'selected_rows') will have the resampled
       # row numbers relative to the original dataframe.
-      
+
       sub_df <- munge(dataframe, munge_procedure)
       # TODO: To prevent canonical names like "selected_rows", this could be determined
       # heuristically, like looking for an attribute with "rows" in its name or 
@@ -93,7 +92,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
-      # browser()
+      
       predicts <- unlist(lapply(slices, function(rows) {
         # Train submodel on all but the current validation slice.
         output$submodels[[which_submodel]]$train(sub_df[-rows, ], verbose = TRUE)
@@ -133,8 +132,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # through c(selected_rows, remaining_rows), take the respective predicted
       # scores and grab the relative indices in that order.
       if (length(remaining_rows) > 0) predicts <- append(predicts,
-        output$submodels[[which_submodel]]$predict(sub_df[remaining_rows,
-          which(colnames(sub_df) != 'dep_var')]))
+        output$submodels[[which_submodel]]$predict(dataframe[remaining_rows,  #bug is here !!!!! sub_df doesn't have the remaining_rows we wanted!!!!
+          which(colnames(dataframe) != 'dep_var')]))
     
       # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
        output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
@@ -161,7 +160,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   rownames(metalearner_dataframe) <- NULL
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
-  if(input$checkcorr) print(cor(metalearner_dataframe))
+  if(checkcorr) print(cor(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
   if (use_cache)
     write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
