@@ -49,6 +49,7 @@ tundra_regularization_train_fn <- function(dataframe) {
 }
 
 tundra_regularization_predict_fn <- function(dataframe, predict_args = list()) {
+ #dataframe$loan_id
   require(glmnet)
   
   type <- if (is.null(predict_args$prediction_type)) output$prediction_type
@@ -56,7 +57,7 @@ tundra_regularization_predict_fn <- function(dataframe, predict_args = list()) {
   
   # s specified, check if cached
   perf_method <- predict_args$penalty %||% input$penalty %||% output$model$lambda.1se
-  browser()
+
   predict(object = output$model$glmnet.fit,
           newx = 
             model.matrix(as.formula(paste('~', paste(output$indep_vars, collapse = '+'))),
