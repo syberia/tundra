@@ -91,15 +91,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
-
-      predicts <- unlist(mclapply(slices, function(rows) {
+      cat("Training cross-validation buckets with ", as.integer(min(buckets, detectCores())), " cores\n")
+      
+      predicts <- unlist(lapply(slices, function(rows) {
         # Train submodel on all but the current validation slice.
         output$submodels[[which_submodel]]$train(sub_df[-rows, ], verbose = TRUE)
         on.exit(output$submodels[[which_submodel]]$trained <<- FALSE)
         # Mark untrained so tundra container allows us
         # to train again next iteration.
         output$submodels[[which_submodel]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
-      }, mc.cores = getOption("mc.cores", as.integer(min(buckets, detectCores()))) ))
+      } )) #, mc.cores = getOption("mc.cores", as.integer(min(buckets, detectCores())))
   
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
@@ -155,12 +156,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
     }))
     metalearner_dataframe <- metalearner_dataframe[order(unlist(slices)), ]
   }
-  
+
   rownames(metalearner_dataframe) <- NULL
+  #metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
+  #metalearner_dataframe <- lapply(metalearner_dataframe, as.numeric)
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
+
   if(checkcorr) print(cor(metalearner_dataframe))
   metalearner_dataframe$dep_var <- dataframe$dep_var
+
   if (use_cache)
     write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
 
