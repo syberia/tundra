@@ -20,6 +20,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   #input$seed <- input$seed %||% 0               # seed controls the sampling for cross validation
   checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
   input$path <- input$path %||% NULL            # where to save the correlation plot of model predictions
+  cv <- input$cv %||% FALSE                     # whether we should perform cross-validation to generate meta-learner dataframe
   
   cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
   
@@ -34,22 +35,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
 # Otherwise the data_stage mungeprocedure will be repeated at every train phase
   attr(dataframe, 'mungepieces') <- NULL
 
-  slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace = T)) # cross-validation buckets
-  # If splices = list(`1` = c(1, 3), `2` = c(2, 4)), then unsplit_indices below will be c(1, 2, 1, 2) 
-  # and tell us along which buckets in slices above we should walk along to reconstruct the sequence 1:4.
-  #unsplit_indices <-
-  #  vapply(seq_len(nrow(dataframe)), function(x) which(sapply(slices, is.element, el = x)), integer(1))
-
   apply_method_name <- if (suppressWarnings(require(pbapply))) 'pblapply' else 'lapply'
   apply_method <- get(apply_method_name)
   output <<- list()
 
   if (input$resample) {
-    slice  <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
-    slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)
-    
     packages('caret')
-    packages('parallel')
+    
     #cat(" (", replicates, " bootstrap replications per submodel)", sep='')
     # We will be training submodels on the entire resampled dataframe,
     # which are necessary for prediction.
@@ -60,7 +52,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
     # it would not make sense to re-combine resulting predictions row-wise,
     # only column-wise.
     which_submodel <- 0
-
+   
     metalearner_dataframe <- do.call(cbind, apply_method(input$submodels, function(model_parameters) {
       (if (apply_method_name == 'pblapply') function(...) suppressMessages(suppressWarnings(...)) else force)({
       # Since we will be training the submodel on the full resampled dataframe
@@ -88,6 +80,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # Fetch the tundra container for this submodel
       output$submodels[[which_submodel]] <<- fetch_submodel(model_parameters)
       
+      if(cv){
+        slice  <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
+        slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)
+        
+        packages('parallel')
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
       # are not re-sampling multiple times, which would be erroneous).
@@ -101,13 +98,19 @@ tundra_ensemble_train_fn <- function(dataframe) {
         # to train again next iteration.
         output$submodels[[which_submodel]]$predict(sub_df[rows, which(colnames(sub_df) != 'dep_var')])
       } )) #, mc.cores = getOption("mc.cores", as.integer(min(buckets, detectCores())))
-  
+      
       # Most of the work is done. We now have to generate predictions by
       # training the model on the whole resampled dataframe, and predicting
       # on the rows that were left out due to resampling to train our meta learner later.
-      output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
-      if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
-
+        output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
+        if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
+      
+    } else {
+      cat("Training submodels")
+       output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
+       predicts <- output$submodels[[which_submodel]]$predict(sub_df[ , which(colnames(sub_df) != 'dep_var')])
+    }
+    
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
       #if (length(remaining_rows) == 0) return(predicts)  #TODO: This is blatantly wrong!! Have to re-order, like below
@@ -144,21 +147,38 @@ tundra_ensemble_train_fn <- function(dataframe) {
     })) # End construction of meta_dataframe
   } else {
     
+    if(cv){
+    slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace = T)) # cross-validation buckets
+    # If splices = list(`1` = c(1, 3), `2` = c(2, 4)), then unsplit_indices below will be c(1, 2, 1, 2) 
+    # and tell us along which buckets in slices above we should walk along to reconstruct the sequence 1:4.
+    # unsplit_indices <-
+    #  vapply(seq_len(nrow(dataframe)), function(x) which(sapply(slices, is.element, el = x)), integer(1))
+    
     print("Start Cross-Validation")
     metalearner_dataframe <- do.call(rbind, apply_method(slices, function(rows) {
       sub_df <- data.frame(lapply(input$submodels, function(model_parameters) {
         model <- fetch_submodel(model_parameters)
         model$train(dataframe[-rows, ], verbose = TRUE)
         res <- model$predict(dataframe[rows, which(colnames(dataframe) != 'dep_var')])
-      }))
+        }))
       colnames(sub_df) <- paste0("model", seq_along(sub_df))
       sub_df
-    }))
+      }))
     metalearner_dataframe <- metalearner_dataframe[order(unlist(slices)), ]
+    } else {
+      print("Start building submodels")
+
+      metalearner_dataframe <- data.frame(lapply(input$submodels, function(model_parameters) {
+          model <- fetch_submodel(model_parameters)
+          model$train(dataframe, verbose = TRUE)
+          res <- model$predict(dataframe[ , which(colnames(dataframe) != 'dep_var')])
+        }))
+        colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
+    }
+    
   }
 
   rownames(metalearner_dataframe) <- NULL
-  #metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   #metalearner_dataframe <- lapply(metalearner_dataframe, as.numeric)
   metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
   colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
@@ -172,13 +192,15 @@ tundra_ensemble_train_fn <- function(dataframe) {
   output$master <<- fetch_submodel(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
+  if(cv){
   # Train final submodels
-  if (!input$resample) { # If resampling was used, submodels are already trained
-    output$submodels <<- lapply(input$submodels, function(model_parameters) {
-      model <- fetch_submodel(model_parameters)
-      model$train(dataframe, verbose = TRUE)
-      model
-    })
+   if (!input$resample) { # If resampling was used, submodels are already trained
+     output$submodels <<- lapply(input$submodels, function(model_parameters) {
+       model <- fetch_submodel(model_parameters)
+       model$train(dataframe, verbose = TRUE)
+       model
+     })
+   }
   }
 
   invisible("ensemble")
