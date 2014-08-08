@@ -2,7 +2,7 @@
 #
 tundra_gbm_train_fn <- function(dataframe) {
   cat("Training GBM model...\n")
-  require(gbm, quietly = TRUE)
+  suppressPackageStartupMessages(library(gbm))
 
   gbm_args <- list()
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
