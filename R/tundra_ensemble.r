@@ -21,6 +21,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
   checkcorr <- input$checkcorr  %||% FALSE      # check correlations of submodel predictions
   input$path <- input$path %||% NULL            # where to save the correlation plot of model predictions
   cv <- input$cv %||% FALSE                     # whether we should perform cross-validation to generate meta-learner dataframe
+  metalearner_dataframe_split <- input$metalearner_dataframe_split %||% 0.5
+  seed <- input$seed %||% 100
   
   cat("Training ensemble composed of ", length(input$submodels), " submodels...\n")
   
@@ -106,9 +108,12 @@ tundra_ensemble_train_fn <- function(dataframe) {
         if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
       
     } else {
-      cat("Training submodels")
-       output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
-       predicts <- output$submodels[[which_submodel]]$predict(sub_df[ , which(colnames(sub_df) != 'dep_var')])
+      cat("Training submodels without cross-validation")
+       set.seed(seed)
+       training_rows <- createDataPartition(factor(sub_df$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
+      
+       output$submodels[[which_submodel]]$train(sub_df[training_rows,], verbose = TRUE)
+       predicts <- output$submodels[[which_submodel]]$predict(sub_df[-training_rows, which(colnames(sub_df) != 'dep_var')])
     }
     
       # Record what row indices were left out due to resampling.
@@ -126,7 +131,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       #   combined_rows <- c(6, 1, 7, 3, 4)
       # which are indices corresponding to a sequence c(1, 2, 3, 4, 5)
       # inside of c(selected_rows, remaining_rows) = c(2, 2, 4, 5, 4, 1, 3)
-      rows_drawer <- append(attr(sub_df, 'selected_rows'), remaining_rows)
+      rows_drawer <- append(attr(sub_df[-training_rows,], 'selected_rows'), remaining_rows)
       combined_rows <- vapply(seq_len(nrow(dataframe)), function(x)
          which(x == rows_drawer)[1], integer(1))
       
@@ -166,33 +171,33 @@ tundra_ensemble_train_fn <- function(dataframe) {
       }))
     metalearner_dataframe <- metalearner_dataframe[order(unlist(slices)), ]
     } else {
-      print("Start building submodels")
-
+      print("Start building submodels without cross-validation")
+      set.seed(seed)
+      training_rows <- createDataPartition(factor(dataframe$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
+      
       metalearner_dataframe <- data.frame(lapply(input$submodels, function(model_parameters) {
           model <- fetch_submodel(model_parameters)
-          model$train(dataframe, verbose = TRUE)
-          res <- model$predict(dataframe[ , which(colnames(dataframe) != 'dep_var')])
+          model$train(dataframe[training_rows, ], verbose = TRUE)
+          res <- model$predict(dataframe[-training_rows, which(colnames(dataframe) != 'dep_var')])
         }))
         colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
     }
     
   }
+      rownames(metalearner_dataframe) <- NULL
+      metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
+      colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
+      if(checkcorr) print(cor(metalearner_dataframe))
 
-  rownames(metalearner_dataframe) <- NULL
-  #metalearner_dataframe <- lapply(metalearner_dataframe, as.numeric)
-  metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
-  colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
-
-  if(checkcorr) print(cor(metalearner_dataframe))
-  metalearner_dataframe$dep_var <- dataframe$dep_var
-
+  if(cv){ metalearner_dataframe$dep_var <- dataframe$dep_var
+  } else metalearner_dataframe$dep_var <- dataframe$dep_var[-training_rows]
+  
   if (use_cache)
     write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
 
   output$master <<- fetch_submodel(input$master)
   output$master$train(metalearner_dataframe, verbose = TRUE)
 
-  if(cv){
   # Train final submodels
    if (!input$resample) { # If resampling was used, submodels are already trained
      output$submodels <<- lapply(input$submodels, function(model_parameters) {
@@ -200,7 +205,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
        model$train(dataframe, verbose = TRUE)
        model
      })
-   }
   }
 
   invisible("ensemble")
