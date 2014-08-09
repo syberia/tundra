@@ -74,11 +74,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       model_parameters$data <- NULL
       # After the line below, attr(sub_df, 'selected_rows') will have the resampled
       # row numbers relative to the original dataframe.
-      sub_df <- munge(dataframe, munge_procedure)
-      # TODO: To prevent canonical names like "selected_rows", this could be determined
-      # heuristically, like looking for an attribute with "rows" in its name or 
-      # one that is an atomic integer vector (except the usual attributes, of course).
-      
+     
       # Fetch the tundra container for this submodel
       output$submodels[[which_submodel]] <<- fetch_submodel(model_parameters)
       
@@ -86,6 +82,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
         slice  <- function(x, n) split(x, as.integer((seq_along(x) - 1) / n))
         slices <- slice(seq_len(nrow(dataframe)), nrow(dataframe) / buckets)
         
+        sub_df <- munge(dataframe, munge_procedure)
+      # TODO: To prevent canonical names like "selected_rows", this could be determined
+      # heuristically, like looking for an attribute with "rows" in its name or 
+      # one that is an atomic integer vector (except the usual attributes, of course).
+      
         packages('parallel')
       # Generate predictions for the resampled dataframe using n-fold
       # cross-validation (and keeping in mind the above comment, note we
@@ -110,10 +111,16 @@ tundra_ensemble_train_fn <- function(dataframe) {
     } else {
       cat("Training submodels without cross-validation")
        set.seed(seed)
-       training_rows <- createDataPartition(factor(sub_df$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
+       training_rows <- createDataPartition(factor(dataframe$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
+      # create additional train and validation split, and use the validtion part to build metalearner dataframe
+       sub_df <- munge(dataframe[training_rows, ], munge_procedure)
+      # and we just perform additional munge procedures specific for each submodel
+
+       output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
+        # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
+       output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
       
-       output$submodels[[which_submodel]]$train(sub_df[training_rows,], verbose = TRUE)
-       predicts <- output$submodels[[which_submodel]]$predict(sub_df[-training_rows, which(colnames(sub_df) != 'dep_var')])
+       predicts <- output$submodels[[which_submodel]]$predict(dataframe[ -training_rows, which(colnames(dataframe) != 'dep_var')])
     }
     
       # Record what row indices were left out due to resampling.
