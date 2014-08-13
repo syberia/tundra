@@ -261,7 +261,7 @@ tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
   meta_dataframe <- data.frame(lapply(output$submodels, function(model) {
     model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')])
   }))
-  browser()
+
   colnames(meta_dataframe) <- paste0("model", seq_along(meta_dataframe))
   print(meta_dataframe)
   cat("\n\n")
