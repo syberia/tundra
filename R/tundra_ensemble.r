@@ -231,7 +231,6 @@ tundra_ensemble_train_fn <- function(dataframe) {
     
   }
 
-  if(input$master[[1]] != "median"){
         rownames(metalearner_dataframe) <- NULL
         metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
         colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
@@ -239,13 +238,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
   
     if(cv){ metalearner_dataframe$dep_var <- dataframe$dep_var
     } else metalearner_dataframe$dep_var <- dataframe$dep_var[-training_rows]
-    
+
     if (use_cache)
       write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
-  
+   
     output$master <<- fetch_submodel(input$master)
     output$master$train(metalearner_dataframe, verbose = TRUE)
-  }
+  
   # Train final submodels
    if (!input$resample | input$master[[1]] == "median") { # If resampling was used, submodels are already trained
      output$submodels <<- lapply(input$submodels, function(model_parameters) {
@@ -262,6 +261,7 @@ tundra_ensemble_predict_fn <- function(dataframe, predicts_args = list()) {
   meta_dataframe <- data.frame(lapply(output$submodels, function(model) {
     model$predict(dataframe[, which(colnames(dataframe) != 'dep_var')])
   }))
+  browser()
   colnames(meta_dataframe) <- paste0("model", seq_along(meta_dataframe))
   print(meta_dataframe)
   cat("\n\n")
