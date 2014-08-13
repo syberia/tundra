@@ -230,7 +230,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
     }
     
   }
-
+     if(input$master[[1]] != "median"){
         rownames(metalearner_dataframe) <- NULL
         metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
         colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
@@ -244,7 +244,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
    
     output$master <<- fetch_submodel(input$master)
     output$master$train(metalearner_dataframe, verbose = TRUE)
-  
+  } else {
+    output$master <<- fetch_submodel(input$master)
+    output$master$trained <- TRUE
+  }
+
   # Train final submodels
    if (!input$resample | input$master[[1]] == "median") { # If resampling was used, submodels are already trained
      output$submodels <<- lapply(input$submodels, function(model_parameters) {
