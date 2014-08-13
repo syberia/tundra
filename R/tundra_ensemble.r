@@ -1,11 +1,50 @@
 #' Tundra ensemble wrapper
 # return a tundra container for the ensemble submodels
+# return a tundra container for the ensemble submodels
 fetch_submodel <- function(model_parameters) {
-  stopifnot(length(model_parameters) > 0 && is.character(model_parameters[[1]]))
-  if (!exists(model_fn <- paste0('tundra_', model_parameters[[1]])))
-    stop("Missing tundra container for keyword '", model_parameters[[1]], "'")
-  get(model_fn)(model_parameters$data %||% list(),
-                model_parameters[setdiff(which(names(model_parameters) != 'data'), 1)] %||% list())
+  is.character(model_parameters[[1]])
+  type <- model_parameters[[1]]
+  model_parameters[[1]] <- NULL
+  
+  # additional munge steps for submodel (empty list means use the post-munged data without additional work)
+  munge_procedure <- model_parameters$data %||% list() 
+  
+  # remaining model parameters (default_args)
+  default_args <- model_parameters[which(names(model_parameters) != 'data')] %||% list()
+  
+  # internal argument
+  internal <- list()
+  
+  # look for associated tundra container
+  if (exists(model_fn <- paste0('tundra_', type))) {
+    return(get(model_fn)(munge_procedure, default_args))
+  } 
+  
+  # look for associated classifier
+  prefilename <- file.path(syberia_root(), 'lib', 'classifiers', type)
+  if ((file.exists(filename <- paste0(prefilename, '.r')) ||
+         file.exists(filename <- paste0(prefilename, '.R')))) {
+    
+    provided_env <- new.env()
+    source(filename, local = provided_env)
+    provided_functions <- syberiaStages:::parse_custom_classifier(provided_env, type)
+    
+    # create a new tundra container on the fly
+    my_tundra_container <-
+      tundra:::tundra_container$new(type, 
+                                    provided_functions$train, 
+                                    provided_functions$predict,
+                                    munge_procedure, 
+                                    default_args, 
+                                    internal)
+    return(my_tundra_container)
+    
+  }
+  
+  stop("Missing tundra container for keyword '", type, "'. ",
+       "It must exist in the tundra package or be present in ",
+       paste0("lib/classifiers/", type, ".R"), call. = FALSE)
+  
 }
 
 
@@ -41,7 +80,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
   apply_method <- get(apply_method_name)
   output <<- list()
 
-  if (input$resample) {
+  if (input$resample & input$master[[1]] != "median") {
     packages('caret')
     
     #cat(" (", replicates, " bootstrap replications per submodel)", sep='')
@@ -157,7 +196,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       predicts[combined_rows]
       })
     })) # End construction of meta_dataframe
-  } else {
+  } else if (input$master[[1]] != "median"){
     
     if(cv){
     slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace = T)) # cross-validation buckets
@@ -191,22 +230,24 @@ tundra_ensemble_train_fn <- function(dataframe) {
     }
     
   }
-      rownames(metalearner_dataframe) <- NULL
-      metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
-      colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
-      if(checkcorr) print(cor(metalearner_dataframe))
 
-  if(cv){ metalearner_dataframe$dep_var <- dataframe$dep_var
-  } else metalearner_dataframe$dep_var <- dataframe$dep_var[-training_rows]
+  if(input$master[[1]] != "median"){
+        rownames(metalearner_dataframe) <- NULL
+        metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
+        colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
+        if(checkcorr) print(cor(metalearner_dataframe))
   
-  if (use_cache)
-    write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
-
-  output$master <<- fetch_submodel(input$master)
-  output$master$train(metalearner_dataframe, verbose = TRUE)
-
+    if(cv){ metalearner_dataframe$dep_var <- dataframe$dep_var
+    } else metalearner_dataframe$dep_var <- dataframe$dep_var[-training_rows]
+    
+    if (use_cache)
+      write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
+  
+    output$master <<- fetch_submodel(input$master)
+    output$master$train(metalearner_dataframe, verbose = TRUE)
+  }
   # Train final submodels
-   if (!input$resample) { # If resampling was used, submodels are already trained
+   if (!input$resample | input$master[[1]] == "median") { # If resampling was used, submodels are already trained
      output$submodels <<- lapply(input$submodels, function(model_parameters) {
        model <- fetch_submodel(model_parameters)
        model$train(dataframe, verbose = TRUE)
