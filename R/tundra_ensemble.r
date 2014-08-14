@@ -146,21 +146,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       # on the rows that were left out due to resampling to train our meta learner later.
         output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
         if (use_cache) saveRDS(output$submodels[[which_submodel]], cache_path)
-      
-    } else {
-      cat("Training submodels without cross-validation")
-       set.seed(seed)
-       training_rows <- createDataPartition(factor(dataframe$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
-      # create additional train and validation split, and use the validtion part to build metalearner dataframe
-       sub_df <- munge(dataframe[training_rows, ], munge_procedure)
-      # and we just perform additional munge procedures specific for each submodel
-
-       output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
-        # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
-       output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
-      
-       predicts <- output$submodels[[which_submodel]]$predict(dataframe[ -training_rows, which(colnames(dataframe) != 'dep_var')])
-    }
+   
     
       # Record what row indices were left out due to resampling.
       remaining_rows <- setdiff(seq_len(nrow(dataframe)), attr(sub_df, 'selected_rows'))
@@ -194,6 +180,22 @@ tundra_ensemble_train_fn <- function(dataframe) {
     
       if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = FALSE)
       predicts[combined_rows]
+    
+       } else {
+        cat("Training submodels without cross-validation")
+        set.seed(seed)
+        training_rows <- createDataPartition(factor(dataframe$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
+        # create additional train and validation split, and use the validtion part to build metalearner dataframe
+        sub_df <- munge(dataframe[training_rows, ], munge_procedure)
+        # and we just perform additional munge procedures specific for each submodel
+        
+        output$submodels[[which_submodel]]$train(sub_df, verbose = TRUE)
+        # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
+        output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
+        
+        predicts <- output$submodels[[which_submodel]]$predict(dataframe[ -training_rows, which(colnames(dataframe) != 'dep_var')])
+       }
+    
       })
     })) # End construction of meta_dataframe
   } else if (input$master[[1]] != "median"){
@@ -227,9 +229,8 @@ tundra_ensemble_train_fn <- function(dataframe) {
           res <- model$predict(dataframe[-training_rows, which(colnames(dataframe) != 'dep_var')])
         }))
         colnames(metalearner_dataframe) <- paste0("model", seq_along(metalearner_dataframe))
-    }
-    
-  }
+     }
+   }
      if(input$master[[1]] != "median"){
         rownames(metalearner_dataframe) <- NULL
         metalearner_dataframe <- data.frame(metalearner_dataframe, stringsAsFactors = FALSE)
@@ -237,7 +238,11 @@ tundra_ensemble_train_fn <- function(dataframe) {
         if(checkcorr) print(cor(metalearner_dataframe))
   
     if(cv){ metalearner_dataframe$dep_var <- dataframe$dep_var
-    } else metalearner_dataframe$dep_var <- dataframe$dep_var[-training_rows]
+    } else {
+      set.seed(seed)
+      training_rows <- createDataPartition(factor(dataframe$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
+      metalearner_dataframe$dep_var <- dataframe$dep_var[-training_rows]
+    }
 
     if (use_cache)
       write.csv(metalearner_dataframe, paste0(input$cache_dir, '/metalearner_dataframe.csv'), row.names = F)
