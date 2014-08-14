@@ -5,10 +5,17 @@ fetch_submodel <- function(model_parameters) {
   is.character(model_parameters[[1]])
   type <- model_parameters[[1]]
   model_parameters[[1]] <- NULL
-  
+  data_source <- model_parameters$data_source
+  model_parameters$data_source <- NULL
   # additional munge steps for submodel (empty list means use the post-munged data without additional work)
   munge_procedure <- model_parameters$data %||% list() 
+  data_source_munge_procedure <- if (!is.null(data_source)) {
+    d <- syberia_project('~/dev/avant-analytics')
+    d$resource(pp('data/#{data_source}'))$value(raw = TRUE)  # manually build the stagerunner for specified data source
+  }
   
+  #TODO: Should we prepend or append the data source specific munge procedures in the end or front?
+  munge_procedure <- append(data_source_munge_procedure, munge_procedure) 
   # remaining model parameters (default_args)
   default_args <- model_parameters[which(names(model_parameters) != 'data')] %||% list()
   
