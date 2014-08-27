@@ -14,13 +14,13 @@ tundra_gbm_train_fn <- function(dataframe) {
                                       '`', sep = ''))
     gbm_args$data <- dataframe
     gbm_args$cv.folds <- input$cv_folds
+    if (identical(gbm_args$cv.folds, 1))
+      stop("Using cv.folds = 1 makes GBM crash. Probably don't want that.")
     gbm_args$n.cores  <- input$number_of_cores
   } else {
     gbm_args$x <- dataframe[, indep_vars]
     gbm_args$y <- dataframe[, 'dep_var']
   }
-
-  gbm_args <- append(gbm_args,
     list(distribution      = input$distribution,
          n.trees           = input$number_of_trees,
          shrinkage         = input$shrinkage_factor,
