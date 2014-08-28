@@ -21,6 +21,7 @@ tundra_gbm_train_fn <- function(dataframe) {
     gbm_args$x <- dataframe[, indep_vars]
     gbm_args$y <- dataframe[, 'dep_var']
   }
+  gbm_args <- append(gbm_args,
     list(distribution      = input$distribution,
          n.trees           = input$number_of_trees,
          shrinkage         = input$shrinkage_factor,
@@ -32,7 +33,7 @@ tundra_gbm_train_fn <- function(dataframe) {
          verbose           = TRUE,
          keep.data         = if (is.null(input$keep.data)) FALSE else as.logical(input$keep.data)
     )
-  }
+  )
 
   # Hack to prevent a hellbug where the AWS.tools package
   # masks the stopCluster function, causing a problem in gbm training
