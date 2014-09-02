@@ -200,6 +200,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
         # Re-attach the munge procedure for use in tundra_ensemble_predict_fn.
         output$submodels[[which_submodel]]$munge_procedure <<- attr(sub_df, 'mungepieces')
         
+        browser()
         predicts <- output$submodels[[which_submodel]]$predict(dataframe[ -training_rows, which(colnames(dataframe) != 'dep_var')])
        }
     
