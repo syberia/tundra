@@ -1,3 +1,7 @@
+#' @name tundra_container
+#' @export
+NULL
+
 #' Tundra container class
 #'
 #' TODO: Formally define parameter spaces for models
@@ -97,11 +101,17 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     
     munge = function(dataframe, steps = TRUE) {
       mungebits::munge(dataframe, munge_procedure[steps]) 
+    },
+
+    show = function() {
+      cat(paste("A tundraContainer of type", sQuote(keyword)), "\n")
     }
   )
 )
 
+#' @export
 summary.tundraContainer <- function(x, ...) summary(x$output$model, ...)
-
-
+#' @export
+print.tundraContainer <-
+  function(x, ...) print(paste("A tundraContainer of type", sQuote(x$keyword)), ...)
 
