@@ -188,7 +188,7 @@ tundra_ensemble_train_fn <- function(dataframe) {
       if (use_cache) write.csv(predicts[combined_rows], paste0(cache_path, 'preds.csv'), row.names = FALSE)
       predicts[combined_rows]
     
-       } else {
+      } else {
         cat("Training submodels without cross-validation")
         set.seed(seed)
         training_rows <- createDataPartition(factor(dataframe$dep_var), p = metalearner_dataframe_split, list = FALSE, times = 1)[,1]
@@ -202,13 +202,13 @@ tundra_ensemble_train_fn <- function(dataframe) {
         
         browser()
         predicts <- output$submodels[[which_submodel]]$predict(dataframe[ -training_rows, which(colnames(dataframe) != 'dep_var')])
-       }
+      }
     
       })
     })) # End construction of meta_dataframe
   } else if (input$master[[1]] != "median"){
     
-    if(cv){
+    if (cv){
     slices <- split(1:nrow(dataframe), sample.int(buckets, nrow(dataframe), replace = T)) # cross-validation buckets
     # If splices = list(`1` = c(1, 3), `2` = c(2, 4)), then unsplit_indices below will be c(1, 2, 1, 2) 
     # and tell us along which buckets in slices above we should walk along to reconstruct the sequence 1:4.
