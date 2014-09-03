@@ -1,4 +1,5 @@
 #' @name tundra_container
+#' @title tundra_container
 #' @export
 NULL
 
@@ -6,6 +7,9 @@ NULL
 #'
 #' TODO: Formally define parameter spaces for models
 #' 
+#' @docType class
+#' @name tundraContainer
+#' @aliases NULL
 #' @export
 tundra_container <- setRefClass('tundraContainer',  #define reference classes to access by reference instead of by value
   fields = list(keyword = 'character',
