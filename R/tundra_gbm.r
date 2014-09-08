@@ -7,6 +7,7 @@ tundra_gbm_train_fn <- function(dataframe) {
   gbm_args <- list()
   indep_vars <- setdiff(colnames(dataframe), 'dep_var')
   stopifnot(length(indep_vars) > 0)
+  input$debug <- isTRUE(input$debug) %||% FALSE
 
   if (input$cv) {
     gbm_args[[1]] <- as.formula(paste('dep_var ~ `',
@@ -38,6 +39,7 @@ tundra_gbm_train_fn <- function(dataframe) {
   # Hack to prevent a hellbug where the AWS.tools package
   # masks the stopCluster function, causing a problem in gbm training
   assign('stopCluster', parallel::stopCluster, envir = globalenv())
+  if (isTRUE(input$debug)) assign('gbm_args', gbm_args, envir = globalenv())
   output <<- list(model = do.call(gbm, gbm_args), perf = list())
   rm('stopCluster', envir = globalenv())
 
