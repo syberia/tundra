@@ -5,6 +5,7 @@ tundra_rf_train_fn <- function(dataframe) {
   require(party)
   require(survival)
   rf_args <- list()
+  
   if(input$distribution == "coxph"){
     indep_vars <- setdiff(colnames(dataframe), c('dep_var', 'surv_time'))
   } else {
@@ -19,11 +20,11 @@ tundra_rf_train_fn <- function(dataframe) {
                                       '`', sep = ''))
   } else {
     
+    rf_args$data <- dataframe
     rf_args$formula <- as.formula(paste('dep_var ~ `',
                                       paste(indep_vars, collapse = "` + `"),
                                       '`', sep = ''))  
   }
- # rf_args$data <- dataframe
   rf_args$controls <- cforest_unbiased(input$trees, input$branches)
   
   #set.seed(input$seed %||% 100)
