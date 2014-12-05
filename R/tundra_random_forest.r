@@ -23,7 +23,8 @@ tundra_rf_train_fn <- function(dataframe) {
                                       paste(indep_vars, collapse = "` + `"),
                                       '`', sep = ''))  
   }
- # rf_args$data <- dataframe
+  
+  rf_args$data <- dataframe
   rf_args$controls <- cforest_unbiased(input$trees, input$branches)
   
   #set.seed(input$seed %||% 100)
