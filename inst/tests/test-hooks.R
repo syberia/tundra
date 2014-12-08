@@ -57,3 +57,13 @@ test_that('hooks can modify internals', {
   expect_identical(simple$internal, list(hello = 'world'))
 })
 
+test_that('hooks can modify locals', {
+  simple <- tundra_container$new('simple')
+  simple$add_hook('predict_post_munge', function() {
+    attr(dataframe, 'mungepieces') <<- NULL
+    dataframe$Species <<- NULL
+  })
+  simple$train(iris)
+  expect_identical(simple$predict(iris), iris[-5])
+})
+
