@@ -41,6 +41,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       if (trained)
         stop("Tundra model '", keyword, "' has already been trained.")
 
+      force(train_args); force(verbose); force(munge) 
+
       .run_hooks('train_pre_munge')
 
       if (length(munge_procedure) > 0 && identical(munge, TRUE)) {
@@ -79,6 +81,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     predict = function(dataframe, predict_args = list(), verbose = FALSE, munge = TRUE) {
       if (!trained)
         stop("Tundra model '", keyword, "' has not been trained yet.")
+
+      force(verbose); force(munge); force(predict_args)
 
       .run_hooks('predict_pre_munge')
 
