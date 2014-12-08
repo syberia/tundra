@@ -19,9 +19,9 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                 default_args = 'list',
                 trained = 'logical',
                 input = 'list',
-                output = 'ANY',   # output stores the actual output of the train function (e.g. the model object)
-                internal = 'list' # for storing info about the model
-                ),
+                output = 'ANY',    # output stores the actual output of the train function (e.g. the model object)
+                internal = 'list', # for storing info about the model
+                hooks = 'list'),
   methods = list(
     initialize = function(keyword = character(0),
                           train_fn = identity, predict_fn = identity,
@@ -40,6 +40,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     train = function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE) {
       if (trained)
         stop("Tundra model '", keyword, "' has already been trained.")
+
+      .run_hooks('train_pre_munge')
 
       if (length(munge_procedure) > 0 && identical(munge, TRUE)) {
         require(mungebits)
@@ -64,11 +66,12 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       environment(train_fn) <<- run_env
       if (debug_flag) debug(train_fn)
 
+      .run_hooks('train_post_munge')
+
       (if (!verbose) capture.output else function(...) eval.parent(...))(
         res <- train_fn(dataframe))           # Apply train function to dataframe
 
       input <<- run_env$input; output <<- run_env$output
-      rm(run_env)
       trained <<- TRUE
       res 
     },
@@ -76,6 +79,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     predict = function(dataframe, predict_args = list(), verbose = FALSE, munge = TRUE) {
       if (!trained)
         stop("Tundra model '", keyword, "' has not been trained yet.")
+
+      .run_hooks('predict_pre_munge')
 
       if (length(munge_procedure) > 0 && identical(munge, TRUE)) {
         require(mungebits)
@@ -94,12 +99,15 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       environment(predict_fn) <<- run_env
       if (debug_flag) debug(predict_fn)
 
+      .run_hooks('predict_post_munge')
+
       (if (!verbose) capture.output else function(...) eval.parent(...))(
-        res <- if (length(formals(predict_fn)) < 2 || missing(predict_args)) predict_fn(dataframe)
-               else predict_fn(dataframe, predict_args)  # Apply predict function to dataframe
+        res <-
+          if (length(formals(predict_fn)) < 2 || missing(predict_args)) {
+            predict_fn(dataframe)
+          } else { predict_fn(dataframe, predict_args) }
       )
       input <<- run_env$input; output <<- run_env$output
-      rm(run_env)
       res
     },
     
@@ -109,6 +117,29 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
 
     show = function() {
       cat(paste("A tundraContainer of type", sQuote(keyword)), "\n")
+    },
+
+    add_hook = function(type, hook_function) {
+      stopifnot(is.character(type) && length(type) == 1)
+      stopifnot(is.function(hook_function))
+      allowed_types <- paste0(as.character(outer(
+        c('train', 'predict'), c('pre', 'post'), paste, sep = '_')), '_munge')
+      if (!is.element(type, allowed_types)) {
+        stop("Tundra container hooks must be one of: ",
+             paste(allowed_types, collapse = ", "))
+      }
+
+      hooks[[type]] <<- c(hooks[[type]], hook_function)
+    },
+
+    .run_hooks = function(type) {
+      for (i in seq_along(hooks[[type]])) {
+        eval.parent(bquote({
+          `*fn*` <- hooks[[.(type)]][[.(i)]]
+          environment(`*fn*`) <- environment()
+          `*fn*`()
+        }))
+      }
     }
   )
 )
