@@ -137,6 +137,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     },
 
     .run_hooks = function(type) {
+      if (!exists('hooks')) return() # Backwards compatibility
       for (i in seq_along(hooks[[type]])) {
         eval.parent(bquote({
           `*fn*` <- hooks[[.(type)]][[.(i)]]
