@@ -22,3 +22,29 @@ test_that('a train post-munge hook works', {
     info = 'the train post-munge hook should have executed')
 })
 
+test_that('a predict pre-munge hook works', {
+  simple <- tundra_container$new('simple',
+    munge_procedure = list("Print" = list(function(.) cat('munged'))))
+  simple$add_hook('predict_pre_munge', function() {
+    attr(dataframe, 'mungepieces') <- NULL
+    expect_identical(dataframe, iris)
+    cat('predicted')
+  })
+  simple$train(iris)
+  expect_output(local({ simple$predict(iris, verbose = TRUE); NULL }), 'predictedmunged',
+    info = 'the predict pre-munge hook should have executed')
+})
+
+test_that('a predict post-munge hook works', {
+  simple <- tundra_container$new('simple',
+    munge_procedure = list("Print" = list(function(.) cat('munged'))))
+  simple$add_hook('predict_post_munge', function() {
+    attr(dataframe, 'mungepieces') <- NULL
+    expect_identical(dataframe, iris)
+    cat('predicted')
+  })
+  simple$train(iris)
+  expect_output(local({ simple$predict(iris, verbose = TRUE); NULL }), 'munged.*predicted',
+    info = 'the predict post-munge hook should have executed')
+})
+
