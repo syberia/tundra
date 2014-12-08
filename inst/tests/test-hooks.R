@@ -48,3 +48,12 @@ test_that('a predict post-munge hook works', {
     info = 'the predict post-munge hook should have executed')
 })
 
+test_that('hooks can modify internals', {
+  simple <- tundra_container$new('simple')
+  simple$add_hook('train_pre_munge', function() {
+    internal <<- list(hello = 'world')
+  })
+  simple$train(iris)
+  expect_identical(simple$internal, list(hello = 'world'))
+})
+
