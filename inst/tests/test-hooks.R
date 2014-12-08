@@ -11,14 +11,14 @@ test_that('a train pre-munge hook works', {
     info = 'the train pre-munge hook should have executed')
 })
 
-test_that('a train pre-munge hook works', {
+test_that('a train post-munge hook works', {
   simple <- tundra_container$new('simple',
     munge_procedure = list("Print" = list(function(.) cat('munged'))))
-  simple$add_hook('train_pre_munge', function() {
+  simple$add_hook('train_post_munge', function() {
     expect_identical(dataframe, iris)
     cat('trained')
   })
-  expect_output(local({ simple$train(iris, verbose = TRUE); NULL }), 'trainedmunged',
-    info = 'the train pre-munge hook should have executed')
+  expect_output(local({ simple$train(iris, verbose = TRUE); NULL }), 'munged.*trained',
+    info = 'the train post-munge hook should have executed')
 })
 
