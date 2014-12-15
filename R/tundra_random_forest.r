@@ -54,7 +54,8 @@ tundra_rf_predict_fn <- function(dataframe, predict_args = list()) {
   if(input$distribution == "coxph"){
     preds
    } else { 
-    Reduce(rbind, preds)[ , grep("1$", colnames(preds[[1]]))]
+    #Reduce(rbind, preds)[ , grep("1$", colnames(preds[[1]]))]
+    matrix(unlist(preds), nrow = nrow(dataframe), byrow = TRUE)[,1]  
   }
   #vapply(preds, function(x) x[[grep("1$", colnames(x))]], numeric(1))
 }
