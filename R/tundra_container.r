@@ -15,7 +15,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
   fields = list(keyword = 'character',
                 train_fn = 'function',
                 predict_fn = 'function',
-                munge_procedure = 'list',  # tundra contains munge_procedure so that it remembers the data-prep steps
+                munge_procedure = 'ANY',  # tundra contains munge_procedure so that it remembers the data-prep steps
                 default_args = 'list',
                 trained = 'logical',
                 input = 'list',
@@ -28,6 +28,9 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                           munge_procedure = list(),
                           default_args = list(),
                           internal = list()) {
+      if (!(is.list(munge_procedure) || is(munge_procedure, "stageRunner"))) {
+        stop("munge_procedure must be a list or stageRunner", call. = FALSE)
+      }
       keyword <<- keyword
       train_fn <<- train_fn
       predict_fn <<- predict_fn
