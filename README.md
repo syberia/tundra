@@ -1,4 +1,4 @@
-Tundra [![Build Status](https://travis-ci.org/robertzk/tundra.svg?branch=master)](https://travis-ci.org/robertzk/tundra.svg?branch=master) [![Coverage Status](https://coveralls.io/repos/robertzk/tundra/badge.png)](https://coveralls.io/r/robertzk/tundra) ![Release Tag](https://img.shields.io/github/tag/robertzk/tundra.svg)
+Tundra [![Build Status](https://img.shields.io/travis/robertzk/tundra.svg)](https://travis-ci.org/robertzk/tundra.svg?branch=master) [![Coverage Status](https://img.shields.io/coveralls/robertzk/tundra.svg)](https://coveralls.io/r/robertzk/tundra) ![Release Tag](https://img.shields.io/github/tag/robertzk/tundra.svg)
 ======
 
 ![tundra](http://i.imgur.com/tBFgOBW.jpg)
