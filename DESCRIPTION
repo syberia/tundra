@@ -13,7 +13,8 @@ Depends:
     R (>= 3.0.1)
 Imports:
     mungebits,
-    stagerunner
+    stagerunner,
+    R6
 License: MIT
 LazyData: true
 Suggests:

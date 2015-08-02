@@ -33,6 +33,10 @@ any machine learning model.
 }
 
 The former is provided by the \href{https://github.com/robertzk/mungebits}{mungebits}
-package, while the latter is fully customizable to any R function.
+package, while the latter is fully customizable to any R function. This
+approach allows arbitrary data preparation and statistical methods, unlike
+attempts such as PMML (Predictive Modeling Markup Language) which constrain
+the space of possible data preparation methodologies and statistical
+methodologies to a very limited subset.
 }
 
