@@ -16,7 +16,8 @@ tundraContainer <- R6::R6Class("tundraContainer",
     .internal         = NULL, # environment
     .hooks            = NULL, # list
 
-    initialize = initialize
+    initialize = initialize,
+    train      = train
     
   )
 )
