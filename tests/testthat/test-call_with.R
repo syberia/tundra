@@ -22,3 +22,9 @@ test_that("it correctly injects a simple example with a list", {
   expect_identical(call_with(fn, list(1), list(x = 2)), c(2, 1, 1))
 })
 
+test_that("it does not modify the original function's environment", {
+  fn <- local({ x <- 1; function(y) { x + y } })
+  call_with(fn, list(1), list(x = 2))
+  expect_identical(fn(1), 2)
+})
+
