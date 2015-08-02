@@ -29,7 +29,7 @@ train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE)
   force(munge)
 
   private$run_hooks("train_pre_munge")
-  if (isTRUE(munge) && length(munge_procedure) > 0) {
+  if (isTRUE(munge) && length(self$.munge_procedure) > 0) {
     dataframe <- munge(dataframe, self$.munge_procedure, verbose)
     attr(dataframe, "mungepieces") <- NULL
   }
