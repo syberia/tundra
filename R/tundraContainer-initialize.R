@@ -39,5 +39,9 @@ initialize <- function(keyword, train_function = identity,
   .munge_procedure  <<- munge_procedure
   .default_args     <<- default_args
   .internal         <<- internal
+
+  .input            <<- list_to_env(list())
+  .output           <<- list_to_env(list())
+  .internal         <<- list_to_env(list())
 }
 

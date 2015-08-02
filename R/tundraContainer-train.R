@@ -29,5 +29,24 @@ train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE)
   force(munge)
 
   private$run_hooks("train_pre_munge")
+  if (isTRUE(munge) && length(munge_procedure) > 0) {
+    dataframe <- munge(dataframe, self$.munge_procedure, verbose)
+    attr(dataframe, "mungepieces") <- NULL
+  }
+  private$run_hooks("train_post_munge")
+
+  call_with(
+    self$.train_function,
+    list(dataframe),
+    list(input = self$.input, output = self$.output)
+  )
+}
+
+munge <- function(dataframe, munge_procedure, verbose) {
+  if (isTRUE(verbose)) {
+    capture.output(Recall(dataframe, munge_procedure, FALSE))
+  } else {
+    mungebits::munge(dataframe, munge_procedure)
+  }
 }
 
