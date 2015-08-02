@@ -14,7 +14,8 @@ Depends:
 Imports:
     mungebits,
     stagerunner,
-    R6
+    R6,
+    crayon
 License: MIT
 LazyData: true
 Suggests:

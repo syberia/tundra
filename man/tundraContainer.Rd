@@ -4,7 +4,7 @@
 \name{tundraContainer}
 \alias{tundraContainer}
 \title{A standard container format for classifiers developed in R.}
-\format{\preformatted{Class 'R6ClassGenerator' <environment: 0x10caaa518> 
+\format{\preformatted{Class 'R6ClassGenerator' <environment: 0x10ca4d430> 
  - attr(*, "name")= chr "tundraContainer_generator"
 }}
 \usage{

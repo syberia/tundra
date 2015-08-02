@@ -28,6 +28,16 @@
 initialize <- function(keyword, train_function = identity,
                        predict_function = identity, munge_procedure = list(),
                        default_args = list(), internal = list()) {
+  if (!(is.list(munge_procedure) || is(munge_procedure, "stageRunner"))) {
+    stop("The ", sQuote("munge_procedure"), " parameter must be a list or ",
+         "stageRunner object.")
+  }
 
+  .keyword          <<- keyword
+  .train_function   <<- train_function
+  .predict_function <<- predict_function
+  .munge_procedure  <<- munge_procedure
+  .default_args     <<- default_args
+  .internal         <<- internal
 }
 
