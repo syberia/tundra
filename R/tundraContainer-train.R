@@ -40,7 +40,7 @@ train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE)
     self$.train_function,
     list(dataframe),
     list(
-      input = list_to_env(list_merge(default_args, train_args), self$.input),
+      input = list_to_env(list_merge(self$.default_args, train_args), self$.input),
       output = self$.output
     )
   )
