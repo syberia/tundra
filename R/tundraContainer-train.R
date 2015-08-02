@@ -38,7 +38,7 @@ train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE)
   output <- call_with(
     self$.train_function,
     list(dataframe),
-    list(input = self$.input, output = self$.output)
+    list(input = list_to_env(train_args, self$.input), output = self$.output)
   )
 
   private$run_hooks("train_finalize")

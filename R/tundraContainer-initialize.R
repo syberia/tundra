@@ -33,15 +33,16 @@ initialize <- function(keyword, train_function = identity,
          "stageRunner object.")
   }
 
-  .keyword          <<- keyword
-  .train_function   <<- train_function
-  .predict_function <<- predict_function
-  .munge_procedure  <<- munge_procedure
-  .default_args     <<- default_args
-  .internal         <<- internal
+  self$.keyword          <<- keyword
+  self$.train_function   <<- train_function
+  self$.predict_function <<- predict_function
+  self$.munge_procedure  <<- munge_procedure
+  self$.default_args     <<- default_args
+  self$.internal         <<- internal
 
-  .input            <<- list_to_env(list())
-  .output           <<- list_to_env(list())
-  .internal         <<- list_to_env(list())
+  self$.input            <<- list_to_env(list())
+  lockEnvironment(self$.input)
+  self$.output           <<- list_to_env(list())
+  self$.internal         <<- list_to_env(list())
 }
 
