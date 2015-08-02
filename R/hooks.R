@@ -40,6 +40,12 @@
 #' @param hook_name character. The hook to run. Must be one of the available
 #'    hooks.
 run_hooks <- function(hook_name) {
-
+  for (hook in hooks[[hook_name]]) {
+    if (length(formals(hook)) > 0) {
+      hook(self)
+    } else {
+      hook()
+    }
+  }
 }
 

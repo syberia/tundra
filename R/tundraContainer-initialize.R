@@ -44,5 +44,6 @@ initialize <- function(keyword, train_function = identity,
   lockEnvironment(self$.input)
   self$.output           <<- list_to_env(list())
   self$.internal         <<- list_to_env(list())
+  self$.hooks            <<- list()
 }
 
