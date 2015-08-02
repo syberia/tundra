@@ -12,7 +12,7 @@ will be preprocessed with the \code{tundraContainer}'s
 \code{munge_procedure} and then passed as the first argument to
 the \code{tundraContainer}'s \code{train_function}.}
 
-\item{train_args}{list. A list of arguments to pass to make available
+\item{train_args}{list. A list of arguments to make available
 to the \code{tundraContainer}'s \code{train_function} through
 use of the \code{input} keyword. See the examples.}
 

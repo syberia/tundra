@@ -4,7 +4,7 @@
 #'    will be preprocessed with the \code{tundraContainer}'s 
 #'    \code{munge_procedure} and then passed as the first argument to
 #'    the \code{tundraContainer}'s \code{train_function}.
-#' @param train_args list. A list of arguments to pass to make available
+#' @param train_args list. A list of arguments to make available
 #'    to the \code{tundraContainer}'s \code{train_function} through
 #'    use of the \code{input} keyword. See the examples.
 #' @param verbose logical. Either \code{TRUE} or \code{FALSE}, by
@@ -38,7 +38,10 @@ train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE)
   output <- call_with(
     self$.train_function,
     list(dataframe),
-    list(input = list_to_env(train_args, self$.input), output = self$.output)
+    list(
+      input = list_to_env(list_merge(default_args, train_args), self$.input),
+      output = self$.output
+    )
   )
 
   private$run_hooks("train_finalize")
