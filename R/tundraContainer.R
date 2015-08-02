@@ -17,7 +17,16 @@ tundraContainer <- R6::R6Class("tundraContainer",
     .hooks            = NULL, # list
 
     initialize = initialize,
-    train      = train
+    train      = train,
+    predict    = predict,
+    #add_hook   = add_hook,
+
+    munge      = function(dataframe, steps = TRUE) {
+      mungebits::munge(dataframe, munge_procedure[steps])
+    },
+    show       = function() {
+      cat("A tundraContainer of type ", sQuote(self$.keyword), "\n")
+    }
   ),
   
   private = list(
