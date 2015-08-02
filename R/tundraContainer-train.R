@@ -20,5 +20,14 @@
 #'    \code{train_function}. Since the \code{train_function} has side effects
 #'    on the container, this can usually be \code{invisible(NULL)}.
 train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE) {
+  if (isTRUE(self$.trained)) {
+    stop("The tundra ", sQuote(self$.keyword), " model has already been trained.")
+  }
+
+  force(train_args)
+  force(verbose)
+  force(munge)
+
+  private$run_hooks("train_pre_munge")
 }
 

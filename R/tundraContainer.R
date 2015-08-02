@@ -18,7 +18,11 @@ tundraContainer <- R6::R6Class("tundraContainer",
 
     initialize = initialize,
     train      = train
-    
-  )
+  ),
+  
+  private = list(
+    run_hooks = run_hooks
+  )  
+
 )
 
