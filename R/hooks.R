@@ -41,7 +41,7 @@
 #' @param hook_name character. The hook to run. Must be one of the available
 #'    hooks.
 run_hooks <- function(hook_name) {
-  for (hook in hooks[[hook_name]]) {
+  for (hook in self$.hooks[[hook_name]]) {
     if (length(formals(hook)) > 0) {
       hook(self)
     } else {
@@ -56,7 +56,7 @@ run_hooks <- function(hook_name) {
 #'    the \code{tundraContainer} as its only argument.
 #' @rdname hooks
 add_hook <- function(hook_name, hook_function) {
-  stopifnot(is.simple_string(hook_name, hook_function),
+  stopifnot(is.simple_string(hook_name),
             is.function(hook_function))
 
   allowed_types <- c("train_pre_munge", "predict_pre_munge",

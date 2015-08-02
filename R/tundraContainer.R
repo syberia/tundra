@@ -19,7 +19,7 @@ tundraContainer <- R6::R6Class("tundraContainer",
     initialize = initialize,
     train      = train,
     predict    = predict,
-    #add_hook   = add_hook,
+    add_hook   = add_hook,
 
     munge      = function(dataframe, steps = TRUE) {
       mungebits::munge(dataframe, munge_procedure[steps])
