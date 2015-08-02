@@ -27,7 +27,7 @@ value).}
 during prediction.}
 
 \item{default_args}{list. A list of default arguments to provide to
-the second argument to the \code{train_function}. The additional
+the second argument of the \code{train_function}. The additional
 arguments provided to the \code{tundraContainer}'s \code{train}
 method will be merged on top of these defaults.}
 

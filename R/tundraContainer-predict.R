@@ -46,7 +46,7 @@ predict <- function(dataframe, predict_args = list(), verbose = FALSE, munge = T
 
   call_with(
     self$.predict_function,
-    args
+    args,
     list(input = self$.input, output = self$.output)
   )
 }
