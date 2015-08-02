@@ -5,7 +5,7 @@
 #'    \code{tundraContainer}'s trained \code{munge_procedure} and
 #'    then passed as the first argument to the \code{tundraContainer}'s
 #'    \code{predict_function}.
-#' @param predict_args list. A list of arguments to pass to pass to the
+#' @param predict_args list. A list of arguments to pass to the
 #'    \code{tundraContainer}'s \code{predict_function} as its second argument.
 #' @param verbose logical. Either \code{TRUE} or \code{FALSE}, by
 #'    default the latter. If \code{TRUE}, then output produced by

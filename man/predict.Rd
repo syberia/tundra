@@ -13,7 +13,7 @@ with the trained model. The data will be preprocessed with the
 then passed as the first argument to the \code{tundraContainer}'s
 \code{predict_function}.}
 
-\item{predict_args}{list. A list of arguments to pass to pass to the
+\item{predict_args}{list. A list of arguments to pass to the
 \code{tundraContainer}'s \code{predict_function} as its second argument.}
 
 \item{verbose}{logical. Either \code{TRUE} or \code{FALSE}, by

@@ -7,7 +7,7 @@
 #'    a list of additional parameters used for training the model.
 #' @param predict_function function. The function used to predict
 #'    on new datasets. Its first argument will be a data.frame,
-#'    the dataset to predict on it, and its second (optional)
+#'    the dataset to predict on, and its second (optional)
 #'    argument will be additional parameters used for prediction
 #'    output (such as whether to return a probabilistic or absolute
 #'    value).
