@@ -39,3 +39,21 @@ test_that("it runs the train pre-munge hook in the correct order", {
   expect_equal(env$effect, c("hook", "mungebit"))
 })
 
+test_that("it runs the train post-munge hook in the correct order", {
+  env  <- list2env(list(effect = character(0)))
+  hook <- function() { env$effect <- c(env$effect, "hook") }
+  container <- container_with_munge_side_effect(env)
+  container$add_hook("train_post_munge", hook)
+  container$train(iris)
+  expect_equal(env$effect, c("mungebit", "hook"))
+})
+
+test_that("it runs the train_finalize hook in the correct order", {
+  env  <- list2env(list(effect = character(0)))
+  hook <- function() { env$effect <- c(env$effect, "hook") }
+  container <- container_with_munge_side_effect(env)
+  container$add_hook("train_post_munge", hook)
+  container$train(iris)
+  expect_equal(env$effect, c("mungebit", "hook"))
+})
+
