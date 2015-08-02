@@ -1,2 +1,4 @@
 library(testthat)
-test_package("tundra")
+library(testthatsomemore)
+library(tundra)
+test_check("tundra")

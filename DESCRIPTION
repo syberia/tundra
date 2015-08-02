@@ -19,6 +19,5 @@ Imports:
 License: MIT
 LazyData: true
 Suggests:
-    knitr,
-    microbenchmark
+    testthatsomemore
 Roxygen: list(wrap = FALSE)
