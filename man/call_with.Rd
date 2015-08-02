@@ -28,7 +28,7 @@ injected during the course of the call.
 }
 \examples{
 \dontrun{
-fn <- local({ x <- 1; function(x) { x + y } })
+fn <- local({ x <- 1; function(y) { x + y } })
 stopifnot(fn(1) == 2)
 stopifnot(call_with(fn, list(1), list(x = 2)) == 3)
 }

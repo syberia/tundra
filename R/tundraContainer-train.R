@@ -35,11 +35,16 @@ train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE)
   }
   private$run_hooks("train_post_munge")
 
-  call_with(
+  output <- call_with(
     self$.train_function,
     list(dataframe),
     list(input = self$.input, output = self$.output)
   )
+
+  private$run_hooks("train_finalize")
+  self$.trained <<- TRUE
+
+  output
 }
 
 munge <- function(dataframe, munge_procedure, verbose) {
