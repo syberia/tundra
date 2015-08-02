@@ -66,3 +66,7 @@ list_merge <- function(list1, list2) {
   list1
 }
 
+is.simple_string <- function(obj) {
+  is.character(obj) && length(obj) == 1 && !is.na(obj) && nzchar(obj)
+}
+

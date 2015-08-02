@@ -37,6 +37,7 @@
 #' Each hook will be provided the \code{tundraContainer} as input
 #' (unless it has no arguments, in which case it will simply be called).
 #'
+#' @name hooks
 #' @param hook_name character. The hook to run. Must be one of the available
 #'    hooks.
 run_hooks <- function(hook_name) {
@@ -47,5 +48,22 @@ run_hooks <- function(hook_name) {
       hook()
     }
   }
+}
+
+#' Add a hook to a tundraContainer.
+#'
+#' @param hook_function function. The hook to execute. It will be provided
+#'    the \code{tundraContainer} as its only argument.
+#' @rdname hooks
+add_hook <- function(hook_name, hook_function) {
+  stopifnot(is.simple_string(hook_name, hook_function),
+            is.function(hook_function))
+
+  allowed_types <- c("train_pre_munge", "predict_pre_munge",
+                     "train_post_munge", "predict_post_munge",
+                     "train_finalize")
+  hook_name <- match.arg(hook_name, allowed_types)
+
+  self$.hooks[[hook_name]] <- c(self$.hooks[[hook_name]], hook_function)
 }
 
