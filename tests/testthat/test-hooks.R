@@ -1,10 +1,24 @@
 context("hooks")
 
 let(container, tundraContainer$new("foo"))
+let(container_with_munge_side_effect, function(env) {
+  force(env)
+  mb <- mungebits:::mungebit(function(data) { 
+    env$effect <- c(env$effect, "mungebit")
+  })
+  mp <- mungebits:::mungepiece(mb)
+  tundraContainer$new("foo", munge_procedure = list(mp))
+})
 
 describe("Invalid inputs", {
   test_that("it errors if an invalid hook name is provided", {
     expect_error(container$add_hook("foo"))
+  })
+
+  test_that("it errors if an invalidly typed hook name is provided", {
+    expect_error(container$add_hook("train_pre_munge", NULL))
+    expect_error(container$add_hook("train_pre_munge", 1))
+    expect_error(container$add_hook("train_pre_munge", iris))
   })
 })
 
@@ -16,4 +30,12 @@ test_that("it can add a simple hook", {
   expect_equal(env$x, 1)
 })
 
+test_that("it runs the train pre-munge hook in the correct order", {
+  env  <- list2env(list(effect = character(0)))
+  hook <- function() { env$effect <- c(env$effect, "hook") }
+  container <- container_with_munge_side_effect(env)
+  container$add_hook("train_pre_munge", hook)
+  container$train(iris)
+  expect_equal(env$effect, c("hook", "mungebit"))
+})
 
