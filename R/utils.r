@@ -24,10 +24,20 @@ list_to_env <- function(obj, parent = emptyenv()) {
 #' @return The result of calling \code{fn} with the injection provided
 #'    by the \code{with} parameter.
 #' @examples \dontrun{
-#' fn <- local({ x <- 1; function(x) { x + y } })
+#' fn <- local({ x <- 1; function(y) { x + y } })
 #' stopifnot(fn(1) == 2)
 #' stopifnot(call_with(fn, list(1), list(x = 2)) == 3)
 #' }
 call_with <- function(fn, args, with) {
-
+  stopifnot(is.list(with) || is.environment(with))
+  debugged <- isdebugged(fn)
+  copy_fn <- fn
+  if (debugged) debug(copy_fn)
+  env <- with
+  if (!is.environment(with)) {
+    with <- list_to_env(with, parent = environment(copy_fn))
+  }
+  environment(fn) <- with
+  do.call(fn, args)
 }
+
