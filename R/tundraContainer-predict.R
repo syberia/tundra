@@ -29,7 +29,7 @@ predict <- function(dataframe, predict_args = list(), verbose = FALSE, munge = T
 
   private$run_hooks("predict_pre_munge")
   if (isTRUE(munge) && length(self$.munge_procedure) > 0) {
-    initial_nrow <- NROW(datafram)
+    initial_nrow <- NROW(dataframe)
     dataframe <- munge(dataframe, self$.munge_procedure, verbose)
     if (NROW(dataframe) != initial_nrow) {
       warning("Some rows were removed during data preparation. ",
@@ -38,7 +38,7 @@ predict <- function(dataframe, predict_args = list(), verbose = FALSE, munge = T
   }
   private$run_hooks("predict_post_munge")
 
-  if (length(formals(self$.predict_function) < 2 || missing(predict_args))) {
+  if (length(formals(self$.predict_function)) < 2 || missing(predict_args)) {
     args <- list(dataframe)
   } else {
     args <- list(dataframe, predict_args)
