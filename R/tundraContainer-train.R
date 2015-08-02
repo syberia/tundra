@@ -1,6 +1,6 @@
 #' Train a model encapsulated within a tundraContainer.
 #'
-#' @param dataframe data.frame. The data set to train the model on. This
+#' @param dataframe data.frame. The dataset to train the model on. This
 #'    will be preprocessed with the \code{tundraContainer}'s 
 #'    \code{munge_procedure} and then passed as the first argument to
 #'    the \code{tundraContainer}'s \code{train_function}.
@@ -18,7 +18,8 @@
 #'    be run through it.
 #' @return The value returned by the \code{tundraContainer}'s
 #'    \code{train_function}. Since the \code{train_function} has side effects
-#'    on the container, this can usually be \code{invisible(NULL)}.
+#'    on the container as its primary purpose, this can usually be
+#'    \code{invisible(NULL)}.
 train <- function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE) {
   if (isTRUE(self$.trained)) {
     stop("The tundra ", sQuote(self$.keyword), " model has already been trained.")

@@ -1,6 +1,6 @@
 #' Predict on a dataset using a trained tundraContainer.
 #'
-#' @param dataframe data.frame. The data set to generate predictions on
+#' @param dataframe data.frame. The dataset to generate predictions on
 #'    with the trained model. The data will be preprocessed with the
 #'    \code{tundraContainer}'s trained \code{munge_procedure} and
 #'    then passed as the first argument to the \code{tundraContainer}'s
@@ -12,7 +12,7 @@
 #'    running the \code{munge_procedure} or the \code{predict_function}
 #'    will not be silenced.
 #' @param munge logical. Either \code{TRUE} or \code{FALSE}, by
-#'    default the former. If \code{FALSE}, the \code{munge_procedure}
+#'    default the former. If \code{TRUE}, the \code{munge_procedure}
 #'    provided to the container during initialization will be used to
 #'    preprocess the given \code{dataframe}.
 #' @return The value returned by the \code{tundraContainer}'s
