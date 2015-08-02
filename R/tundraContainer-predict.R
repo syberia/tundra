@@ -19,6 +19,35 @@
 #'    \code{predict_function}, usually a numeric vector or
 #'    \code{data.frame} of predictions.
 predict <- function(dataframe, predict_args = list(), verbose = FALSE, munge = TRUE) {
+  if (!isTRUE(self$.trained)) {
+    stop("Tundra model ", sQuote(self$.keyword), " has not been trained yet.")
+  }
 
+  force(verbose)
+  force(munge)
+  force(predict_args)
+
+  private$run_hooks("predict_pre_munge")
+  if (isTRUE(munge) && length(self$.munge_procedure) > 0) {
+    initial_nrow <- NROW(datafram)
+    dataframe <- munge(dataframe, self$.munge_procedure, verbose)
+    if (NROW(dataframe) != initial_nrow) {
+      warning("Some rows were removed during data preparation. ",
+              "Predictions will not match input dataframe.")
+    }
+  }
+  private$run_hooks("predict_post_munge")
+
+  if (length(formals(self$.predict_function) < 2 || missing(predict_args))) {
+    args <- list(dataframe)
+  } else {
+    args <- list(dataframe, predict_args)
+  }
+
+  call_with(
+    self$.predict_function,
+    args
+    list(input = self$.input, output = self$.output)
+  )
 }
 
