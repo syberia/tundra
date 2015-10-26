@@ -1,4 +1,4 @@
-Deployable Models in R [![Build Status](https://img.shields.io/travis/robertzk/tundra.svg)](https://travis-ci.org/robertzk/tundra.svg?branch=master) [![Coverage Status](https://img.shields.io/coveralls/robertzk/tundra.svg)](https://coveralls.io/r/robertzk/tundra) ![Release Tag](https://img.shields.io/github/tag/robertzk/tundra.svg)
+Deployable Models in R [![Build Status](https://img.shields.io/travis/robertzk/tundra.svg)](https://travis-ci.org/robertzk/tundra.svg?branch=master) [![Coverage Status](https://img.shields.io/coveralls/robertzk/tundra.svg)](https://coveralls.io/r/robertzk/tundra) ![Release Tag](https://img.shields.io/github/tag/robertzk/tundra.svg) [![Documentation](https://img.shields.io/badge/rocco--docs-%E2%9C%93-blue.svg)](http://robertzk.github.io/tundra/)
 ======
 
 ![tundra logo](inst/images/tundra.gif)
