@@ -16,7 +16,7 @@ Imports:
     mungebits,
     R6,
     stagerunner
-License: MIT
+License: MIT + file LICENSE
 LazyData: true
 Suggests:
     testthat,
