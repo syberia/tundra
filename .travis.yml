@@ -6,7 +6,7 @@ before_install:
 install:
 - ./travis-tool.sh install_deps
 - ./travis-tool.sh install_r testthat
-- ./travis-tool.sh install_github robertzk/stagerunner robertzk/Ramd
+- ./travis-tool.sh install_github syberia/stagerunner robertzk/Ramd
 - ./travis-tool.sh install_github robertzk/statsUtils robertzk/mungebits
 - ./travis-tool.sh install_github robertzk/syberiaMungebits robertzk/testthatsomemore
 - "./travis-tool.sh install_github jimhester/covr"
