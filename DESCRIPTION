@@ -12,10 +12,10 @@ Authors@R: c(person("Robert", "Krzyzanowski",
 Depends:
     R (>= 3.0.1)
 Imports:
+    crayon,
     mungebits,
-    stagerunner,
     R6,
-    crayon
+    stagerunner
 License: MIT
 LazyData: true
 Suggests:
