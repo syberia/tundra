@@ -3,10 +3,11 @@ context("hooks")
 let(container, tundraContainer$new("foo"))
 let(container_with_munge_side_effect, function(env) {
   force(env)
-  mb <- mungebits:::mungebit(function(data) { 
+  mb <- mungebits2::mungebit$new(function(data) { 
     env$effect <- c(env$effect, "mungebit")
+    data
   })
-  mp <- mungebits:::mungepiece(mb)
+  mp <- mungebits2::mungepiece$new(mb)
   tundraContainer$new("foo", munge_procedure = list(mp))
 })
 

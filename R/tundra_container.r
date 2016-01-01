@@ -49,12 +49,12 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       .run_hooks('train_pre_munge')
 
       if (length(munge_procedure) > 0 && identical(munge, TRUE)) {
-        require(mungebits)
+        require(mungebits2)
         triggers <- unlist(lapply(munge_procedure,
                               function(x) inherits(x, 'trigger')))
         
         (if (!verbose) capture.output else function(...) eval.parent(...))(
-          dataframe <- mungebits::munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
+          dataframe <- mungebits2::munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
 
         # Store trained munge_procedure
         munge_procedure <<- attr(dataframe, 'mungepieces')[!triggers]
@@ -90,10 +90,10 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       .run_hooks('predict_pre_munge')
 
       if (length(munge_procedure) > 0 && identical(munge, TRUE)) {
-        require(mungebits)
+        require(mungebits2)
         initial_nrow <- nrow(dataframe)
         (if (!verbose) capture.output else function(...) eval.parent(...))(
-          dataframe <- mungebits::munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
+          dataframe <- mungebits2::munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
         if (nrow(dataframe) != initial_nrow)
           warning(paste("Some rows were removed during data preparation.",
                         "Predictions will not match input dataframe."))
@@ -119,7 +119,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
     },
     
     munge = function(dataframe, steps = TRUE) {
-      mungebits::munge(dataframe, munge_procedure[steps]) 
+      mungebits2::munge(dataframe, munge_procedure[steps]) 
     },
 
     show = function() {

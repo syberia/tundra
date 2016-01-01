@@ -22,7 +22,7 @@ tundraContainer <- R6::R6Class("tundraContainer",
     add_hook   = add_hook,
 
     munge      = function(dataframe, steps = TRUE) {
-      mungebits::munge(dataframe, munge_procedure[steps])
+      mungebits2::munge(dataframe, munge_procedure[steps])
     },
     show       = function() {
       cat("A tundraContainer of type ", sQuote(self$.keyword), "\n")

@@ -12,7 +12,7 @@
 #'    output (such as whether to return a probabilistic or absolute
 #'    value).
 #' @param munge_procedure list. A list of trained
-#'    \code{\link[mungebits]{mungepiece}}s to apply to data sets
+#'    \code{\link[mungebits2]{mungepiece}}s to apply to data sets
 #'    during prediction. 
 #' @param default_args list. A list of default arguments to provide to
 #'    the second argument of the \code{train_function}. The additional

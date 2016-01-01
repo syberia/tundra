@@ -1,7 +1,7 @@
 # Version 0.2.3
 
  * The `munge_procedure` passed to a `tundraContainer` can now be a stageRunner,
-   in preparation for hierarchical munging in the mungebits package.
+   in preparation for hierarchical munging in the mungebits2 package.
 
 # Version 0.2.2
 
