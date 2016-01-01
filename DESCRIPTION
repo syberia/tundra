@@ -4,7 +4,7 @@ Description: Tundra provides a standardized container format for classifiers
     developed in R. This allows easier deployment by keeping both the data
     preparation procedure and the statistics in one place with an easy
     interface.
-Version: 0.3.0
+Version: 0.3.0.9000
 Author: Robert Krzyzanowski <technoguyrob@gmail.com>
 Maintainer: Robert Krzyzanowski <technoguyrob@gmail.com>
 Authors@R: c(person("Robert", "Krzyzanowski",
@@ -13,12 +13,13 @@ Depends:
     R (>= 3.0.1)
 Imports:
     crayon,
-    mungebits,
     R6,
     stagerunner
 License: MIT + file LICENSE
 LazyData: true
 Suggests:
+    mungebits2,
     testthat,
     testthatsomemore
 Roxygen: list(wrap = FALSE)
+RoxygenNote: 5.0.1

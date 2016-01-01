@@ -55,7 +55,7 @@ munge <- function(dataframe, munge_procedure, verbose) {
   if (isTRUE(verbose)) {
     capture.output(Recall(dataframe, munge_procedure, FALSE))
   } else {
-    mungebits::munge(dataframe, munge_procedure)
+    mungebits2::munge(dataframe, munge_procedure)
   }
 }
 

@@ -1,3 +1,7 @@
+# Version 0.2.3.9000
+
+ * Start development version and use mungebits2 package throughout.
+
 # Version 0.2.3
 
  * The `munge_procedure` passed to a `tundraContainer` can now be a stageRunner,

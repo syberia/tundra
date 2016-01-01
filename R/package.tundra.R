@@ -25,7 +25,7 @@
 #'     a \code{train} method.}
 #' }
 #'
-#' The former is provided by the \href{https://github.com/robertzk/mungebits22}{mungebits2}
+#' The former is provided by the \href{https://github.com/syberia/mungebits2}{mungebits2}
 #' package, while the latter is fully customizable to any R function. This
 #' approach allows arbitrary data preparation and statistical methods, unlike
 #' attempts such as PMML (Predictive Modeling Markup Language) which constrain
