@@ -100,7 +100,8 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
 
       }
 
-      run_env <- new.env(parent = globalenv())
+      run_env <- new.env(parent = old_env <- environment(predict_fn))
+      on.exit(environment(predict_fn) <<- old_env)
       run_env$input <- input; run_env$output <- output
       debug_flag <- isdebugged(predict_fn)
       environment(predict_fn) <<- run_env
