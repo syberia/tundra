@@ -31,6 +31,9 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       if (!(is.list(munge_procedure) || is(munge_procedure, "stageRunner"))) {
         stop("munge_procedure must be a list or stageRunner", call. = FALSE)
       }
+      if (is.function(predict_fn)) {
+        environment(predict_fn) <- globalenv()
+      }
       keyword <<- keyword
       train_fn <<- train_fn
       predict_fn <<- predict_fn
