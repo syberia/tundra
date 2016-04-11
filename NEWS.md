@@ -1,4 +1,4 @@
-# Version 0.2.4
+# Version 0.2.4-5
  * Revert the manipulation of the environment of the predict function.
 
 # Version 0.2.3

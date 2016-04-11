@@ -34,6 +34,9 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       keyword <<- keyword
       train_fn <<- train_fn
       predict_fn <<- predict_fn
+      if (is.function(predict_fn)) {
+        environment(predict_fn) <<- globalenv()
+      }
       munge_procedure <<- munge_procedure
       default_args <<- default_args
       internal <<- internal
@@ -100,7 +103,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
 
       }
 
-      run_env <- new.env(parent = old_env <- environment(predict_fn))
+      run_env <- new.env(parent = old_env <- globalenv())
       on.exit(environment(predict_fn) <<- old_env)
       run_env$input <- input; run_env$output <- output
       debug_flag <- isdebugged(predict_fn)
