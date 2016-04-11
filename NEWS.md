@@ -1,3 +1,6 @@
+# Version 0.2.4
+ * Revert the manipulation of the environment of the predict function.
+
 # Version 0.2.3
 
  * The `munge_procedure` passed to a `tundraContainer` can now be a stageRunner,
