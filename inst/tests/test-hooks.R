@@ -2,7 +2,7 @@ context('hooks')
 
 test_that('a train pre-munge hook works', {
   simple <- tundra_container$new('simple',
-    munge_procedure = list("Print" = list(function(.) cat('munged'))))
+    munge_procedure = list("Print" = list(function(.) { cat('munged'); . })))
   simple$add_hook('train_pre_munge', function() {
     expect_identical(dataframe, iris)
     cat('trained')
@@ -13,7 +13,7 @@ test_that('a train pre-munge hook works', {
 
 test_that('a train post-munge hook works', {
   simple <- tundra_container$new('simple',
-    munge_procedure = list("Print" = list(function(.) cat('munged'))))
+    munge_procedure = list("Print" = list(function(.) { cat('munged'); . })))
   simple$add_hook('train_post_munge', function() {
     expect_identical(dataframe, iris)
     cat('trained')
@@ -24,7 +24,7 @@ test_that('a train post-munge hook works', {
 
 test_that('a predict pre-munge hook works', {
   simple <- tundra_container$new('simple',
-    munge_procedure = list("Print" = list(function(.) cat('munged'))))
+    munge_procedure = list("Print" = list(function(.) { cat('munged'); . })))
   simple$add_hook('predict_pre_munge', function() {
     attr(dataframe, 'mungepieces') <- NULL
     expect_identical(dataframe, iris)
@@ -37,7 +37,7 @@ test_that('a predict pre-munge hook works', {
 
 test_that('a predict post-munge hook works', {
   simple <- tundra_container$new('simple',
-    munge_procedure = list("Print" = list(function(.) cat('munged'))))
+    munge_procedure = list("Print" = list(function(.) { cat('munged'); . })))
   simple$add_hook('predict_post_munge', function() {
     attr(dataframe, 'mungepieces') <- NULL
     expect_identical(dataframe, iris)
