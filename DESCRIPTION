@@ -13,7 +13,11 @@ Depends:
     R (>= 3.0.1)
 Imports:
     mungebits,
+    mungebits2,
     stagerunner
+Remotes:
+    robertzk/mungebits,
+    syberia/mungebits2
 License: MIT
 LazyData: true
 Suggests:
