@@ -1,3 +1,7 @@
+# Version 0.2.6
+
+ * Use `mungebits2` instead of `mungebits` for model munging.
+
 # Version 0.2.4-5
  * Revert the manipulation of the environment of the predict function.
 

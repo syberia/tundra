@@ -4,7 +4,7 @@ Description: Tundra provides a standardized container format for classifiers
     developed in R. This allows easier deployment by keeping both the data
     preparation procedure and the statistics in one place with an easy
     interface.
-Version: 0.2.5
+Version: 0.2.6
 Author: Robert Krzyzanowski <technoguyrob@gmail.com>
 Maintainer: Robert Krzyzanowski <technoguyrob@gmail.com>
 Authors@R: c(person("Robert", "Krzyzanowski",
