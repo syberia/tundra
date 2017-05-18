@@ -5,22 +5,21 @@
 #' @export
 tundraContainer <- R6::R6Class("tundraContainer",
   public = list(
-    .keyword          = NULL, # character
-    .train_function   = NULL, # function
-    .predict_function = NULL, # function
-    .munge_procedure  = NULL, # list of mungepieces
-    .default_args     = NULL, # list
+    .keyword          = NULL,  # character
+    .train_function   = NULL,  # function
+    .predict_function = NULL,  # function
+    .munge_procedure  = NULL,  # list of mungepieces
+    .default_args     = NULL,  # list
     .trained          = FALSE, # logical
-    .input            = NULL, # environment
-    .output           = NULL, # environment
-    .internal         = NULL, # environment
-    .hooks            = NULL, # list
+    .input            = NULL,  # environment
+    .output           = NULL,  # environment
+    .internal         = NULL,  # environment
+    .hooks            = NULL,  # list
 
     initialize = initialize,
     train      = train,
     predict    = predict,
     add_hook   = add_hook,
-
     munge      = function(dataframe, steps = TRUE) {
       mungebits2::munge(dataframe, munge_procedure[steps])
     },
@@ -28,10 +27,7 @@ tundraContainer <- R6::R6Class("tundraContainer",
       cat("A tundraContainer of type ", sQuote(self$.keyword), "\n")
     }
   ),
-  
   private = list(
     run_hooks = run_hooks
-  )  
-
+  )
 )
-

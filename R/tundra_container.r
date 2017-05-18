@@ -8,16 +8,18 @@ tundra_initialize_fn <- function(keyword = character(0),
                       munge_procedure = list(),
                       default_args = list(),
                       internal = list()) {
+
   if (!(is.list(munge_procedure) || is(munge_procedure, "stageRunner"))) {
     stop("munge_procedure must be a list or stageRunner", call. = FALSE)
   }
-  keyword <<- keyword
-  train_fn <<- train_fn
-  predict_fn <<- predict_fn
+  keyword         <<- keyword
+  train_fn        <<- train_fn
+  predict_fn      <<- predict_fn
   munge_procedure <<- munge_procedure
-  default_args <<- default_args
-  internal <<- internal
-  trained <<- FALSE
+  default_args    <<- default_args
+  internal        <<- internal
+  output          <<- list_to_env(list())
+  trained         <<- FALSE
 }
 
 #' Tundra container class
@@ -29,16 +31,16 @@ tundra_initialize_fn <- function(keyword = character(0),
 #' @aliases NULL
 #' @export
 tundra_container <- setRefClass('tundraContainer',  #define reference classes to access by reference instead of by value
-  fields = list(keyword = 'character',
-                train_fn = 'function',
-                predict_fn = 'function',
-                munge_procedure = 'ANY',  # tundra contains munge_procedure so that it remembers the data-prep steps
-                default_args = 'list',
-                trained = 'logical',
-                input = 'list',
-                output = 'ANY',    # output stores the actual output of the train function (e.g. the model object)
-                internal = 'list', # for storing info about the model
-                hooks = 'list'),
+  fields = list(keyword         = 'character',
+                train_fn        = 'function',
+                predict_fn      = 'function',
+                munge_procedure = 'ANY', # tundra contains munge_procedure so that it remembers the data-prep steps
+                default_args    = 'list',
+                trained         = 'logical',
+                input           = 'list',
+                output          = 'ANY', # output stores the actual output of the train function (e.g. the model object)
+                internal        = 'list', # for storing info about the model
+                hooks           = 'list'),
   methods = list(
     initialize = tundra_initialize_fn,
 
