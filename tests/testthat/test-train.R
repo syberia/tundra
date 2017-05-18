@@ -16,4 +16,3 @@ test_that("it can train a simple example", {
   container$train(iris)
   expect_identical(container$.output$data, iris)
 })
-

@@ -3,10 +3,27 @@
 #' @export
 NULL
 
+tundra_initialize_fn <- function(keyword = character(0),
+                      train_fn = identity, predict_fn = identity,
+                      munge_procedure = list(),
+                      default_args = list(),
+                      internal = list()) {
+  if (!(is.list(munge_procedure) || is(munge_procedure, "stageRunner"))) {
+    stop("munge_procedure must be a list or stageRunner", call. = FALSE)
+  }
+  keyword <<- keyword
+  train_fn <<- train_fn
+  predict_fn <<- predict_fn
+  munge_procedure <<- munge_procedure
+  default_args <<- default_args
+  internal <<- internal
+  trained <<- FALSE
+}
+
 #' Tundra container class
 #'
 #' TODO: Formally define parameter spaces for models
-#' 
+#'
 #' @docType class
 #' @name tundraContainer
 #' @aliases NULL
@@ -23,28 +40,13 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
                 internal = 'list', # for storing info about the model
                 hooks = 'list'),
   methods = list(
-    initialize = function(keyword = character(0),
-                          train_fn = identity, predict_fn = identity,
-                          munge_procedure = list(),
-                          default_args = list(),
-                          internal = list()) {
-      if (!(is.list(munge_procedure) || is(munge_procedure, "stageRunner"))) {
-        stop("munge_procedure must be a list or stageRunner", call. = FALSE)
-      }
-      keyword <<- keyword
-      train_fn <<- train_fn
-      predict_fn <<- predict_fn
-      munge_procedure <<- munge_procedure
-      default_args <<- default_args
-      internal <<- internal
-      trained <<- FALSE
-    },
+    initialize = tundra_initialize_fn,
 
     train = function(dataframe, train_args = list(), verbose = FALSE, munge = TRUE) {
       if (trained)
         stop("Tundra model '", keyword, "' has already been trained.")
 
-      force(train_args); force(verbose); force(munge) 
+      force(train_args); force(verbose); force(munge)
 
       .run_hooks('train_pre_munge')
 
@@ -52,7 +54,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
         require(mungebits2)
         triggers <- unlist(lapply(munge_procedure,
                               function(x) inherits(x, 'trigger')))
-        
+
         (if (!verbose) capture.output else function(...) eval.parent(...))(
           dataframe <- mungebits2::munge(dataframe, munge_procedure)) # Apply munge_procedure to dataframe
 
@@ -78,7 +80,7 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
 
       input <<- run_env$input; output <<- run_env$output
       trained <<- TRUE
-      res 
+      res
     },
 
     predict = function(dataframe, predict_args = list(), verbose = FALSE, munge = TRUE) {
@@ -117,9 +119,9 @@ tundra_container <- setRefClass('tundraContainer',  #define reference classes to
       input <<- run_env$input; output <<- run_env$output
       res
     },
-    
+
     munge = function(dataframe, steps = TRUE) {
-      mungebits2::munge(dataframe, munge_procedure[steps]) 
+      mungebits2::munge(dataframe, munge_procedure[steps])
     },
 
     show = function() {
@@ -157,4 +159,3 @@ summary.tundraContainer <- function(x, ...) summary(x$output$model, ...)
 #' @export
 print.tundraContainer <-
   function(x, ...) print(paste("A tundraContainer of type", sQuote(x$keyword)), ...)
-
