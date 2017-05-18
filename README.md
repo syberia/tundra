@@ -6,11 +6,21 @@ Deployable Models in R [![Build Status](https://img.shields.io/travis/syberia/tu
 Tundra provides a standardized container format for classifiers developed in R. It "freezes"
 your models so you can put them in production safely!
 
+## Installation
+
+This package is in active development and not yet available from CRAN (as of May 18, 2017).
+To install the latest development builds directly from GitHub, run this instead:
+
+```R
+if (!require("devtools")) install.packages("devtools")
+devtools::install_github("syberia/tundra")
+```
+
 ### License
 
 This project is licensed under the MIT License:
 
-Copyright (c) 2014-2016 Syberia, Avant, Robert Krzyzanowski
+Copyright (c) 2014-2017 Syberia, Avant, Robert Krzyzanowski
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
