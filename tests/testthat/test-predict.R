@@ -11,4 +11,3 @@ test_that("it can predict on a simple example", {
   container$train(iris)
   expect_identical(container$predict(iris), stats::predict(model, newdata = iris))
 })
-

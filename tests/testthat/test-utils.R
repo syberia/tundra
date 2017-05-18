@@ -10,6 +10,12 @@ describe("list_merge", {
     expect_equal(list_merge(original, list()), original)
   })
 
+  test_that("merging nontrivial lists without names", {
+    lstone <- list(42, 228)
+    lsttwo <- list(322)
+    expect_equal(list_merge(lstone, lsttwo), list(42, 228, 322))
+  })
+
   test_that("merging flas lists", {
     lstone <- list(meaning_of_life = 42)
     lsttwo <- list(foo = "bar")
