@@ -10,7 +10,7 @@ test_that("it errors when an invalid munge_procedure is provided", {
 test_that("it successfully creates a tundraContainer when a valid munge_procedure is provided", {
   testthatsomemore::assert(tundraContainer$new("foo", munge_procedure = list()))
   testthatsomemore::assert(
-    tundraContainer$new("foo", munge_procedure = stagerunner::stageRunner$new(list(force)))
+    container <- tundraContainer$new("foo", munge_procedure = stagerunner::stageRunner$new(list(force)))
   )
 })
 
