@@ -3,7 +3,7 @@ context("hooks")
 let(container, tundraContainer$new("foo"))
 let(container_with_munge_side_effect, function(env) {
   force(env)
-  mb <- mungebits2::mungebit$new(function(data) { 
+  mb <- mungebits2::mungebit$new(function(data) {
     env$effect <- c(env$effect, "mungebit")
     data
   })
@@ -83,4 +83,3 @@ test_that("it runs the predict post-munge hook in the correct order", {
   container$predict(iris)
   expect_equal(env$effect, c("mungebit", "hook"))
 })
-
