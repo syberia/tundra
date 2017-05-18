@@ -24,10 +24,19 @@ tundraContainer <- R6::R6Class("tundraContainer",
       mungebits2::munge(dataframe, munge_procedure[steps])
     },
     show       = function() {
-      cat("A tundraContainer of type ", sQuote(self$.keyword), "\n")
+      cat("A tundraContainer of type", sQuote(self$.keyword), "\n")
+      invisible(self)
     }
   ),
   private = list(
     run_hooks = run_hooks
   )
 )
+
+#' @export
+print.tundraContainer <- function(x, ...) {
+  cat(paste0("A tundraContainer of type ", sQuote(x$.keyword), "\n"))
+}
+
+#' @export
+summary.tundraContainer <- function(x, ...) summary(x$.output$model, ...)

@@ -14,3 +14,16 @@ test_that("it successfully creates a tundraContainer when a valid munge_procedur
   )
 })
 
+test_that("it can produce human-readable summaries", {
+  container <- tundraContainer$new("foo", function(df) { output$model <- 1:10 })
+  expect_equal(summary(container), summary(NULL))
+  container$train(iris)
+  expect_equal(summary(container), summary(1:10))
+})
+
+test_that("it can print a nice name", {
+  container <- tundraContainer$new("foo")
+  printed <- capture.output(print(container))
+  expected <- paste("A tundraContainer of type", sQuote("foo"))
+  expect_equal(printed, expected)
+})

@@ -26,4 +26,4 @@ Remotes:
     syberia/mungebits2,
     robertzk/testthatsomemore
 Roxygen: list(wrap = FALSE)
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

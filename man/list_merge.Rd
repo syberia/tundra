@@ -26,4 +26,3 @@ stopifnot(identical(list_merge(list(a = 1, b = 2), list(b = 3, c = 4)),
 stopifnot(identical(list_merge(NULL, list(a = 1)), list(a = 1)))
 }
 }
-

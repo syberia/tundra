@@ -33,4 +33,3 @@ stopifnot(fn(1) == 2)
 stopifnot(call_with(fn, list(1), list(x = 2)) == 3)
 }
 }
-
