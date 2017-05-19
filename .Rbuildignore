@@ -3,3 +3,6 @@ data/.DS_Store
 ..Rcheck
 .git
 .gitignore
+^\.\./syberia\.github\.io/docs/packages$
+^\.\./syberia\.github\.io/docs/packages/tundra$
+^docs$
