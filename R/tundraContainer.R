@@ -34,7 +34,7 @@ tundraContainer <- R6::R6Class("tundraContainer",
 )
 
 #' @export
-tundra_container <- function(...) { tundraContainer$new(...) }
+tundra_container <- tundraContainer
 
 #' @export
 print.tundraContainer <- function(x, ...) { x$show() }
