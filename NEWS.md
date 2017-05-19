@@ -1,3 +1,6 @@
+# Version 0.3.1.9000
+ * Deprecate `refClass` based implementation in favor of R6 and test it thoroughly.
+
 # Version 0.2.3
 
  * The `munge_procedure` passed to a `tundraContainer` can now be a stageRunner,
@@ -10,4 +13,3 @@
    `predict` methods are called. You can add a hook using
    `container$add_hook('train_pre_munge', function() { ... })`. Note these functions
    can modify the tundraContainer's internals, like `input` or `output`.
-
