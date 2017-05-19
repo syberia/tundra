@@ -19,5 +19,5 @@ test_that("can't predict with a non-trained container", {
     stats::predict(output$model, newdata = data)
   })
 
-  expect_error(container$predict(iris), "Tundra model ‘foo’ has not been trained yet.")
+  expect_error(container$predict(iris), "has not been trained yet.")
 })
