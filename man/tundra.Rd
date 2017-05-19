@@ -39,4 +39,3 @@ attempts such as PMML (Predictive Modeling Markup Language) which constrain
 the space of possible data preparation methodologies and statistical
 methodologies to a very limited subset.
 }
-

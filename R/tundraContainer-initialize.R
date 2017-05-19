@@ -13,7 +13,7 @@
 #'    value).
 #' @param munge_procedure list. A list of trained
 #'    \code{\link[mungebits2]{mungepiece}}s to apply to data sets
-#'    during prediction. 
+#'    during prediction.
 #' @param default_args list. A list of default arguments to provide to
 #'    the second argument of the \code{train_function}. The additional
 #'    arguments provided to the \code{tundraContainer}'s \code{train}
@@ -33,17 +33,15 @@ initialize <- function(keyword, train_function = identity,
          "stageRunner object.")
   }
 
-  self$.keyword          <<- keyword
-  self$.train_function   <<- train_function
-  self$.predict_function <<- predict_function
-  self$.munge_procedure  <<- munge_procedure
-  self$.default_args     <<- default_args
-  self$.internal         <<- internal
-
-  self$.input            <<- list_to_env(list())
+  self$.keyword          <- keyword
+  self$.train_function   <- train_function
+  self$.predict_function <- predict_function
+  self$.munge_procedure  <- munge_procedure
+  self$.default_args     <- default_args
+  self$.internal         <- internal
+  self$.input            <- list_to_env(list())
   lockEnvironment(self$.input)
-  self$.output           <<- list_to_env(list())
-  self$.internal         <<- list_to_env(list())
-  self$.hooks            <<- list()
+  self$.output           <- list_to_env(list())
+  self$.internal         <- list_to_env(list())
+  self$.hooks            <- list()
 }
-

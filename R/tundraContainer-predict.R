@@ -30,7 +30,7 @@ predict <- function(dataframe, predict_args = list(), verbose = FALSE, munge = T
   private$run_hooks("predict_pre_munge")
   if (isTRUE(munge) && length(self$.munge_procedure) > 0) {
     initial_nrow <- NROW(dataframe)
-    dataframe <- munge(dataframe, self$.munge_procedure, verbose)
+    dataframe <- mungebits2::munge(dataframe, self$.munge_procedure, verbose)
     if (NROW(dataframe) != initial_nrow) {
       warning("Some rows were removed during data preparation. ",
               "Predictions will not match input dataframe.")
@@ -50,4 +50,3 @@ predict <- function(dataframe, predict_args = list(), verbose = FALSE, munge = T
     list(input = self$.input, output = self$.output)
   )
 }
-

@@ -60,8 +60,11 @@ list_merge <- function(list1, list2) {
   list1[Filter(function(x) nchar(x) > 0, names(list2) %||% c())] <- NULL
   for (i in seq_along(list2)) {
     name <- names(list2)[i]
-    if (!identical(name, NULL) && !identical(name, "")) list1[[name]] <- list2[[i]]
-    else list1 <- append(list1, list(list2[[i]]))
+    if (!identical(name, NULL) && !identical(name, "")) {
+      list1[[name]] <- list2[[i]]
+    } else {
+      list1 <- append(list1, list(list2[[i]]))
+    }
   }
   list1
 }
@@ -69,4 +72,3 @@ list_merge <- function(list1, list2) {
 is.simple_string <- function(obj) {
   is.character(obj) && length(obj) == 1 && !is.na(obj) && nzchar(obj)
 }
-

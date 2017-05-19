@@ -36,4 +36,3 @@ The value returned by the \code{tundraContainer}'s
 \description{
 Train a model encapsulated within a tundraContainer.
 }
-

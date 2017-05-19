@@ -34,4 +34,3 @@ The value returned by the \code{tundraContainer}'s
 \description{
 Predict on a dataset using a trained tundraContainer.
 }
-
