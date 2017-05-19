@@ -1,3 +1,6 @@
+# Version 0.3.1.9001
+ * export `tundra_container` for backwards compatibility
+
 # Version 0.3.1.9000
  * Deprecate `refClass` based implementation in favor of R6 and test it thoroughly.
 
