@@ -3,3 +3,4 @@
 S3method(print,tundraContainer)
 S3method(summary,tundraContainer)
 export(tundraContainer)
+export(tundra_container)
