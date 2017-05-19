@@ -1,6 +1,5 @@
-Deployable Models in R [![Build Status](https://img.shields.io/travis/syberia/tundra.svg)](https://travis-ci.org/syberia/tundra) [![Coverage Status](https://img.shields.io/coveralls/syberia/tundra.svg)](https://coveralls.io/r/syberia/tundra) [![Documentation](https://img.shields.io/badge/rocco--docs-%E2%9C%93-blue.svg)](http://syberia.github.io/tundra/) [![Join the chat at https://gitter.im/syberia/Lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/syberia/Lobby) ![Release Tag](https://img.shields.io/github/tag/syberia/tundra.svg)
+Deployable Models in R [![Build Status](https://img.shields.io/travis/syberia/tundra.svg)](https://travis-ci.org/syberia/tundra) [![Coverage Status](https://img.shields.io/coveralls/syberia/tundra.svg)](https://coveralls.io/r/syberia/tundra) [![Documentation](https://img.shields.io/badge/docs-%E2%9C%93-900c3f.svg)](http://syberia.io/docs/packages/mungebits2) [![Documentation](https://img.shields.io/badge/rocco-%E2%9C%93-blue.svg)](http://syberia.github.io/mungebits2/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/syberia/syberia/blob/master/LICENSE) [![Join the chat at https://gitter.im/syberia/Lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/syberia/Lobby) 
 ======
-
 ![tundra logo](inst/images/tundra.gif)
 
 Tundra provides a standardized container format for classifiers developed in R. It "freezes"
