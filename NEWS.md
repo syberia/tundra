@@ -1,5 +1,5 @@
 # Version 0.3.1.9000
- * Deprecate `refCalss` based implementation in favor of R6 and test it thoroughly.
+ * Deprecate `refClass` based implementation in favor of R6 and test it thoroughly.
 
 # Version 0.2.3
 
